@@ -3,7 +3,7 @@
 ## Fase 1: Backend (API)
 
 ### Etapa atual: Auth + Users
-- [ ] 1.1 Register
+- [x] 1.1 Register
 - [ ] 1.2 Login
 - [ ] 1.3 Refresh Token
 - [ ] 1.4 Password Recovery
