@@ -1,17 +1,20 @@
 import { randomBytes } from 'node:crypto';
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { eq, gt } from 'drizzle-orm';
+import { and, eq, gt, isNull } from 'drizzle-orm';
 import { DbService } from '../db/db.service';
-import { refreshTokens, users } from '../db/schema';
+import { passwordResetTokens, refreshTokens, users } from '../db/schema';
+import type { ForgotPasswordData } from './dto/forgot-password.dto';
 import type { LoginData } from './dto/login.dto';
 import type { RefreshData } from './dto/refresh.dto';
 import type { RegisterData } from './dto/register.dto';
+import type { ResetPasswordData } from './dto/reset-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -102,6 +105,71 @@ export class AuthService {
     });
 
     return { accessToken, refreshToken: rawRefreshToken };
+  }
+
+  async forgotPassword(dto: ForgotPasswordData) {
+    const [user] = await this.db.db
+      .select()
+      .from(users)
+      .where(eq(users.email, dto.email))
+      .limit(1);
+
+    if (!user) {
+      return {
+        message: 'If that email exists, a reset token has been generated',
+      };
+    }
+
+    const rawToken = randomBytes(48).toString('hex');
+    const tokenHash = await bcrypt.hash(rawToken, 10);
+
+    await this.db.db.insert(passwordResetTokens).values({
+      userId: user.id,
+      tokenHash,
+      expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+    });
+
+    return { resetToken: rawToken };
+  }
+
+  async resetPassword(dto: ResetPasswordData) {
+    const storedTokens = await this.db.db
+      .select()
+      .from(passwordResetTokens)
+      .where(
+        and(
+          gt(passwordResetTokens.expiresAt, new Date()),
+          isNull(passwordResetTokens.usedAt),
+        ),
+      );
+
+    let matchedToken: typeof passwordResetTokens.$inferSelect | null = null;
+
+    for (const stored of storedTokens) {
+      const isMatch = await bcrypt.compare(dto.token, stored.tokenHash);
+      if (isMatch) {
+        matchedToken = stored;
+        break;
+      }
+    }
+
+    if (!matchedToken) {
+      throw new BadRequestException('Invalid or expired reset token');
+    }
+
+    const passwordHash = await bcrypt.hash(dto.password, 10);
+
+    await this.db.db
+      .update(users)
+      .set({ passwordHash })
+      .where(eq(users.id, matchedToken.userId));
+
+    await this.db.db
+      .update(passwordResetTokens)
+      .set({ usedAt: new Date() })
+      .where(eq(passwordResetTokens.id, matchedToken.id));
+
+    return { message: 'Password updated successfully' };
   }
 
   async refresh(dto: RefreshData) {

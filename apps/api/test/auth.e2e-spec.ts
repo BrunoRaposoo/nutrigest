@@ -148,4 +148,86 @@ describe('Auth (e2e)', () => {
 
     expect(res.statusCode).toBe(400);
   });
+
+  describe('/auth/forgot-password (POST)', () => {
+    it('should return reset token for existing user', async () => {
+      const email = `e2e-forgot-${Date.now()}@example.com`;
+
+      await app.inject({
+        method: 'POST',
+        url: '/auth/register',
+        payload: { name: 'Forgot E2E', email, password: 'password123' },
+      });
+
+      const res = await app.inject({
+        method: 'POST',
+        url: '/auth/forgot-password',
+        payload: { email },
+      });
+
+      expect(res.statusCode).toBe(201);
+      const body = JSON.parse(res.body);
+      expect(body).toHaveProperty('resetToken');
+    });
+
+    it('should return generic message for non-existent email', async () => {
+      const res = await app.inject({
+        method: 'POST',
+        url: '/auth/forgot-password',
+        payload: { email: 'nonexistent@example.com' },
+      });
+
+      expect(res.statusCode).toBe(201);
+      const body = JSON.parse(res.body);
+      expect(body).toHaveProperty('message');
+      expect(body).not.toHaveProperty('resetToken');
+    });
+  });
+
+  describe('/auth/reset-password (POST)', () => {
+    it('should reset password with valid token', async () => {
+      const email = `e2e-reset-${Date.now()}@example.com`;
+
+      await app.inject({
+        method: 'POST',
+        url: '/auth/register',
+        payload: { name: 'Reset E2E', email, password: 'password123' },
+      });
+
+      const forgotRes = await app.inject({
+        method: 'POST',
+        url: '/auth/forgot-password',
+        payload: { email },
+      });
+      const { resetToken } = JSON.parse(forgotRes.body);
+
+      const resetRes = await app.inject({
+        method: 'POST',
+        url: '/auth/reset-password',
+        payload: { token: resetToken, password: 'newpassword456' },
+      });
+
+      expect(resetRes.statusCode).toBe(201);
+      const resetBody = JSON.parse(resetRes.body);
+      expect(resetBody).toHaveProperty('message');
+
+      const loginRes = await app.inject({
+        method: 'POST',
+        url: '/auth/login',
+        payload: { email, password: 'newpassword456' },
+      });
+
+      expect(loginRes.statusCode).toBe(201);
+    });
+
+    it('should reject invalid token', async () => {
+      const res = await app.inject({
+        method: 'POST',
+        url: '/auth/reset-password',
+        payload: { token: 'invalid-token', password: 'newpassword456' },
+      });
+
+      expect(res.statusCode).toBe(400);
+    });
+  });
 });

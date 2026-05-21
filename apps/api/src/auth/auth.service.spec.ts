@@ -1,4 +1,8 @@
-import { ConflictException, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { DbService } from '../db/db.service';
@@ -137,5 +141,97 @@ describe('AuthService', () => {
     await expect(
       service.refresh({ refreshToken: 'invalid-token-value' }),
     ).rejects.toThrow(UnauthorizedException);
+  });
+
+  describe('forgotPassword', () => {
+    it('should generate reset token for existing user', async () => {
+      const email = `forgot-${Date.now()}@example.com`;
+
+      await service.register({
+        name: 'Forgot Test',
+        email,
+        password: 'password123',
+      });
+
+      const result = await service.forgotPassword({ email });
+
+      expect(result).toHaveProperty('resetToken');
+      expect(typeof result.resetToken).toBe('string');
+      expect(result.resetToken.length).toBeGreaterThan(0);
+    });
+
+    it('should return generic message for non-existent email', async () => {
+      const result = await service.forgotPassword({
+        email: 'nonexistent@example.com',
+      });
+
+      expect(result).toHaveProperty('message');
+      expect(result).not.toHaveProperty('resetToken');
+    });
+  });
+
+  describe('resetPassword', () => {
+    it('should reset password with valid token', async () => {
+      const email = `reset-${Date.now()}@example.com`;
+
+      await service.register({
+        name: 'Reset Test',
+        email,
+        password: 'password123',
+      });
+
+      const { resetToken } = (await service.forgotPassword({ email })) as {
+        resetToken: string;
+      };
+
+      const result = await service.resetPassword({
+        token: resetToken,
+        password: 'newpassword456',
+      });
+
+      expect(result).toHaveProperty('message');
+
+      const loginResult = await service.login({
+        email,
+        password: 'newpassword456',
+      });
+
+      expect(loginResult).toHaveProperty('accessToken');
+    });
+
+    it('should reject invalid token', async () => {
+      await expect(
+        service.resetPassword({
+          token: 'invalid-token',
+          password: 'newpassword456',
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject already used token', async () => {
+      const email = `reset-used-${Date.now()}@example.com`;
+
+      await service.register({
+        name: 'Reset Used',
+        email,
+        password: 'password123',
+      });
+
+      const { resetToken } = (await service.forgotPassword({ email })) as {
+        resetToken: string;
+      };
+
+      await service.resetPassword({
+        token: resetToken,
+        password: 'newpassword456',
+      });
+
+      await expect(
+        service.resetPassword({
+          token: resetToken,
+          password: 'anotherpassword',
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
   });
 });
