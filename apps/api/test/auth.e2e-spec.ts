@@ -230,4 +230,48 @@ describe('Auth (e2e)', () => {
       expect(res.statusCode).toBe(400);
     });
   });
+
+  describe('/auth/logout (POST)', () => {
+    it('should reject without token (unauthorized)', async () => {
+      const res = await app.inject({
+        method: 'POST',
+        url: '/auth/logout',
+      });
+
+      expect(res.statusCode).toBe(401);
+    });
+
+    it('should revoke refresh tokens', async () => {
+      const email = `e2e-logout-${Date.now()}@example.com`;
+
+      await app.inject({
+        method: 'POST',
+        url: '/auth/register',
+        payload: { name: 'Logout E2E', email, password: 'password123' },
+      });
+
+      const loginRes = await app.inject({
+        method: 'POST',
+        url: '/auth/login',
+        payload: { email, password: 'password123' },
+      });
+      const loginBody = JSON.parse(loginRes.body);
+
+      const logoutRes = await app.inject({
+        method: 'POST',
+        url: '/auth/logout',
+        headers: { authorization: `Bearer ${loginBody.accessToken}` },
+      });
+
+      expect(logoutRes.statusCode).toBe(201);
+
+      const refreshRes = await app.inject({
+        method: 'POST',
+        url: '/auth/refresh',
+        payload: { refreshToken: loginBody.refreshToken },
+      });
+
+      expect(refreshRes.statusCode).toBe(401);
+    });
+  });
 });

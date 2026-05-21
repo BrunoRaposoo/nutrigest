@@ -170,6 +170,62 @@ describe('AuthService', () => {
     });
   });
 
+  describe('logout', () => {
+    it('should revoke all refresh tokens', async () => {
+      const email = `logout-${Date.now()}@example.com`;
+
+      await service.register({
+        name: 'Logout Test',
+        email,
+        password: 'password123',
+      });
+
+      const loginResult = await service.login({
+        email,
+        password: 'password123',
+      });
+
+      await service.logout(loginResult.user.id);
+
+      await expect(
+        service.refresh({ refreshToken: loginResult.refreshToken }),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+  });
+
+  describe('login (destructive)', () => {
+    it('should invalidate previous refresh tokens on new login', async () => {
+      const email = `login-destructive-${Date.now()}@example.com`;
+
+      await service.register({
+        name: 'Login Destructive',
+        email,
+        password: 'password123',
+      });
+
+      const firstLogin = await service.login({
+        email,
+        password: 'password123',
+      });
+
+      const secondLogin = await service.login({
+        email,
+        password: 'password123',
+      });
+
+      expect(secondLogin.refreshToken).not.toBe(firstLogin.refreshToken);
+
+      await expect(
+        service.refresh({ refreshToken: firstLogin.refreshToken }),
+      ).rejects.toThrow(UnauthorizedException);
+
+      const thirdLogin = await service.refresh({
+        refreshToken: secondLogin.refreshToken,
+      });
+      expect(thirdLogin).toHaveProperty('accessToken');
+    });
+  });
+
   describe('resetPassword', () => {
     it('should reset password with valid token', async () => {
       const email = `reset-${Date.now()}@example.com`;
