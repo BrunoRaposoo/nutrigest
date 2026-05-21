@@ -5,10 +5,8 @@
 ### Etapa atual: Auth + Users
 - [x] 1.1 Register
 - [x] 1.2 Login
-- [ ] 1.3 Refresh Token
-- [ ] 1.2 Login
-- [ ] 1.3 Refresh Token
-- [ ] 1.4 Password Recovery
+- [x] 1.3 Refresh Token
+- [x] 1.4 Password Recovery
 - [ ] 1.5 User CRUD (admin)
 - [ ] 1.6 Profile (/me)
 
