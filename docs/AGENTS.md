@@ -54,7 +54,7 @@ pnpm --filter @nutrigest/api test:watch    # Watch mode
 pnpm --filter @nutrigest/api exec drizzle-kit generate   # Gera migração
 pnpm --filter @nutrigest/api exec drizzle-kit migrate    # Aplica migração
 pnpm --filter @nutrigest/api exec drizzle-kit studio     # Drizzle Studio
-pnpm --filter @nutrigest/api seed                        # Popula dados iniciais
+pnpm --filter @nutrigest/api seed                        # Popula admin: admin@nutrigest.com / Admin@123
 
 # Docker
 docker compose up -d         # Sobe PostgreSQL
