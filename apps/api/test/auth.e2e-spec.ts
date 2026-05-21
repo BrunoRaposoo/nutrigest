@@ -274,4 +274,127 @@ describe('Auth (e2e)', () => {
       expect(refreshRes.statusCode).toBe(401);
     });
   });
+
+  describe('/auth/me (GET) - profile', () => {
+    it('should reject without token', async () => {
+      const res = await app.inject({
+        method: 'GET',
+        url: '/auth/me',
+      });
+
+      expect(res.statusCode).toBe(401);
+    });
+
+    it('should return current user profile', async () => {
+      const email = `e2e-me-get-${Date.now()}@example.com`;
+
+      await app.inject({
+        method: 'POST',
+        url: '/auth/register',
+        payload: { name: 'Me Get', email, password: 'password123' },
+      });
+
+      const loginRes = await app.inject({
+        method: 'POST',
+        url: '/auth/login',
+        payload: { email, password: 'password123' },
+      });
+      const { accessToken } = JSON.parse(loginRes.body);
+
+      const res = await app.inject({
+        method: 'GET',
+        url: '/auth/me',
+        headers: { authorization: `Bearer ${accessToken}` },
+      });
+
+      expect(res.statusCode).toBe(200);
+      const body = JSON.parse(res.body);
+      expect(body).toHaveProperty('id');
+      expect(body.email).toBe(email);
+      expect(body).toHaveProperty('role');
+      expect(body).not.toHaveProperty('passwordHash');
+    });
+  });
+
+  describe('/auth/me (PATCH) - update profile', () => {
+    it('should reject without token', async () => {
+      const res = await app.inject({
+        method: 'PATCH',
+        url: '/auth/me',
+        payload: { name: 'New Name' },
+      });
+
+      expect(res.statusCode).toBe(401);
+    });
+
+    it('should update user name', async () => {
+      const email = `e2e-me-patch-${Date.now()}@example.com`;
+
+      await app.inject({
+        method: 'POST',
+        url: '/auth/register',
+        payload: { name: 'Old Name', email, password: 'password123' },
+      });
+
+      const loginRes = await app.inject({
+        method: 'POST',
+        url: '/auth/login',
+        payload: { email, password: 'password123' },
+      });
+      const { accessToken } = JSON.parse(loginRes.body);
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: '/auth/me',
+        headers: { authorization: `Bearer ${accessToken}` },
+        payload: { name: 'New Name' },
+      });
+
+      expect(res.statusCode).toBe(200);
+      const body = JSON.parse(res.body);
+      expect(body.name).toBe('New Name');
+    });
+
+    it('should update password and allow login with new password', async () => {
+      const email = `e2e-me-pw-${Date.now()}@example.com`;
+
+      await app.inject({
+        method: 'POST',
+        url: '/auth/register',
+        payload: { name: 'Me PW', email, password: 'password123' },
+      });
+
+      const loginRes = await app.inject({
+        method: 'POST',
+        url: '/auth/login',
+        payload: { email, password: 'password123' },
+      });
+      const { accessToken } = JSON.parse(loginRes.body);
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: '/auth/me',
+        headers: { authorization: `Bearer ${accessToken}` },
+        payload: { password: 'newpassword456' },
+      });
+
+      expect(res.statusCode).toBe(200);
+
+      const newLoginRes = await app.inject({
+        method: 'POST',
+        url: '/auth/login',
+        payload: { email, password: 'newpassword456' },
+      });
+
+      expect(newLoginRes.statusCode).toBe(201);
+
+      const oldLoginRes = await app.inject({
+        method: 'POST',
+        url: '/auth/login',
+        payload: { email, password: 'password123' },
+      });
+
+      expect(oldLoginRes.statusCode).toBe(401);
+    });
+  });
 });
