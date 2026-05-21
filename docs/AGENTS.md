@@ -102,6 +102,8 @@ docker compose down          # Para serviços
 | POST | `/auth/register` | — | Registrar novo usuário |
 | POST | `/auth/login` | — | Login (retorna accessToken + refreshToken + user) |
 | POST | `/auth/refresh` | — | Refresh token (rotação + reuse detection) |
+| GET | `/auth/me` | JWT Bearer | Obter perfil do usuário logado |
+| PATCH | `/auth/me` | JWT Bearer | Atualizar nome/email/senha do perfil |
 | POST | `/auth/logout` | JWT Bearer | Logout (revoga todos os refresh tokens do user) |
 | POST | `/auth/forgot-password` | — | Solicitar token de reset de senha |
 | POST | `/auth/reset-password` | — | Resetar senha com token |

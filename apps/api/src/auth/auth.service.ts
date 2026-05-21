@@ -15,6 +15,7 @@ import type { LoginData } from './dto/login.dto';
 import type { RefreshData } from './dto/refresh.dto';
 import type { RegisterData } from './dto/register.dto';
 import type { ResetPasswordData } from './dto/reset-password.dto';
+import type { UpdateProfileData } from './dto/update-profile.dto';
 
 @Injectable()
 export class AuthService {
@@ -97,6 +98,77 @@ export class AuthService {
       .delete(refreshTokens)
       .where(eq(refreshTokens.userId, userId));
     return { message: 'Logged out successfully' };
+  }
+
+  async getProfile(userId: string) {
+    const [user] = await this.db.db
+      .select({
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        role: users.role,
+        createdAt: users.createdAt,
+        updatedAt: users.updatedAt,
+      })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    return user;
+  }
+
+  async updateProfile(userId: string, dto: UpdateProfileData) {
+    const [existing] = await this.db.db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    if (!existing) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    if (dto.email && dto.email !== existing.email) {
+      const emailTaken = await this.db.db
+        .select()
+        .from(users)
+        .where(eq(users.email, dto.email))
+        .limit(1);
+
+      if (emailTaken.length > 0) {
+        throw new ConflictException('Email already in use');
+      }
+    }
+
+    const values: Partial<typeof users.$inferInsert> = {};
+    if (dto.name) values.name = dto.name;
+    if (dto.email) values.email = dto.email;
+    if (dto.password) {
+      values.passwordHash = await bcrypt.hash(dto.password, 10);
+    }
+
+    if (Object.keys(values).length === 0) {
+      return this.getProfile(userId);
+    }
+
+    const [user] = await this.db.db
+      .update(users)
+      .set(values)
+      .where(eq(users.id, userId))
+      .returning({
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        role: users.role,
+        createdAt: users.createdAt,
+        updatedAt: users.updatedAt,
+      });
+
+    return user;
   }
 
   private async generateTokens(userId: string, email: string, role: string) {

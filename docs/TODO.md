@@ -9,7 +9,7 @@
 - [x] 1.4 Password Recovery
 - [x] Logout + login destrutivo (sessão única)
 - [x] 1.5 User CRUD (admin)
-- [ ] 1.6 Profile (/me)
+- [x] 1.6 Profile (/me)
 
 ### Próximas etapas
 - [ ] 2. Products CRUD
