@@ -29,6 +29,26 @@ nutrigest/
 └── pnpm-workspace.yaml
 ```
 
+## Git Workflow
+
+### Branches
+- `main` — Produção. Apenas merges vindos de `dev` após aprovação completa.
+- `dev` — Integração. Feature branches são mergeados aqui via PR.
+- `feat/<nome>` — Desenvolvimento ativo. Criado a partir de `dev`.
+
+### Fluxo
+1. Criar feature branch: `git checkout -b feat/<nome> dev`
+2. Desenvolver (vários commits)
+3. Abrir PR no GitHub: `feat/<nome>` → `dev`
+4. **Aguardar aprovação manual** — não mergear automaticamente
+5. Após merge em `dev` pelo usuário, continuar próximo desenvolvimento
+6. `dev` → `main` apenas quando a fase estiver completa e testada
+
+### Commits
+- Usar commits convencionais: `feat:`, `fix:`, `test:`, `docs:`, `refactor:`
+- Um commit por sub-feature (ex: `feat: add user registration with auth module`)
+- Commits atômicos: cada commit representa uma unidade lógica completa
+
 ## Comandos
 
 ```bash
@@ -69,7 +89,7 @@ docker compose down          # Para serviços
 - **Backend-first:** API completa antes de qualquer frontend
 - **TDD:** Testes primeiro, implementação depois
 - **Commits convencionais:** `feat:`, `test:`, `docs:`, `refactor:`, `fix:`
-- **Branch:** Desenvolvimento na `dev`, merges para `main` após aprovação
+- **Branch:** Feature branch → PR → `dev` (merge manual) → `main` (futuro)
 - **Spec-driven:** Toda feature documentada em `docs/superpowers/`
 - **Swagger:** Toda rota documentada com decorators OpenAPI
 
@@ -83,11 +103,11 @@ docker compose down          # Para serviços
 6. Testes e2e (supertest + Fastify)
 7. Seed data se aplicável
 8. Lint + Build + Testes passando
-9. Commit e aprovação
+9. Commit e abertura de PR
 
 ### Stack de validação
 
 - DTO validation: `nestjs-zod` (Zod integrado ao NestJS)
 - Senhas: bcrypt com salt rounds = 10
 - JWT: `@nestjs/jwt` + `passport-jwt` com strategy
-- Refresh token: armazenado em banco com hash, rotação a cada uso
+- Refresh token: armazenado em banco com bcrypt hash, rotação a cada uso
