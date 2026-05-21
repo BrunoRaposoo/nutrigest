@@ -1,8 +1,8 @@
-import { Injectable, ConflictException } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
+import { eq } from 'drizzle-orm';
 import { DbService } from '../db/db.service';
 import { users } from '../db/schema';
-import { eq } from 'drizzle-orm';
-import * as bcrypt from 'bcrypt';
 import type { RegisterData } from './dto/register.dto';
 
 @Injectable()

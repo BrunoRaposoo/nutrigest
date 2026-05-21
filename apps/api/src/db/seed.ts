@@ -1,7 +1,7 @@
+import * as bcrypt from 'bcrypt';
+import { eq } from 'drizzle-orm';
 import { DbService } from './db.service';
 import { users } from './schema';
-import { eq } from 'drizzle-orm';
-import * as bcrypt from 'bcrypt';
 
 export async function seedDatabase(db: DbService) {
   const existing = await db.db

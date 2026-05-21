@@ -1,7 +1,7 @@
-import { Test, type TestingModule } from '@nestjs/testing';
-import { AuthService } from './auth.service';
-import { DbService } from '../db/db.service';
 import { ConflictException } from '@nestjs/common';
+import { Test, type TestingModule } from '@nestjs/testing';
+import { DbService } from '../db/db.service';
+import { AuthService } from './auth.service';
 
 describe('AuthService', () => {
   let service: AuthService;
