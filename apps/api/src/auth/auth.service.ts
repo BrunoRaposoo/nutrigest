@@ -75,6 +75,10 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
+    await this.db.db
+      .delete(refreshTokens)
+      .where(eq(refreshTokens.userId, user.id));
+
     const tokens = await this.generateTokens(user.id, user.email, user.role);
 
     return {
@@ -86,6 +90,13 @@ export class AuthService {
         role: user.role,
       },
     };
+  }
+
+  async logout(userId: string) {
+    await this.db.db
+      .delete(refreshTokens)
+      .where(eq(refreshTokens.userId, userId));
+    return { message: 'Logged out successfully' };
   }
 
   private async generateTokens(userId: string, email: string, role: string) {

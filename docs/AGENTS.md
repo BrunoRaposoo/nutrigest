@@ -93,14 +93,34 @@ docker compose down          # Para serviços
 - **Spec-driven:** Toda feature documentada em `docs/superpowers/`
 - **Swagger:** Toda rota documentada com decorators OpenAPI
 
+## Endpoints Atuais
+
+### Auth (`/auth`)
+
+| Método | Rota | Auth | Descrição |
+|---|---|---|---|
+| POST | `/auth/register` | — | Registrar novo usuário |
+| POST | `/auth/login` | — | Login (retorna accessToken + refreshToken + user) |
+| POST | `/auth/refresh` | — | Refresh token (rotação + reuse detection) |
+| POST | `/auth/logout` | JWT Bearer | Logout (revoga todos os refresh tokens do user) |
+| POST | `/auth/forgot-password` | — | Solicitar token de reset de senha |
+| POST | `/auth/reset-password` | — | Resetar senha com token |
+
+### Segurança
+
+- **Sessão única:** Ao fazer login, todos os refresh tokens antigos do usuário são deletados
+- **Logout:** Revoga todos os refresh tokens do usuário (uso em dispositivo compartilhado)
+- **Access token:** JWT com expiração de 15min (stateless)
+- **Refresh token:** Opaque random hex, bcrypt hash no banco, expira em 7 dias
+
 ### Padrão de cada feature
 
 1. Schema Drizzle + migração
 2. DTOs com validação Zod
 3. Service com lógica de negócio
 4. Controller com Swagger decorators
-5. Testes unitários (Jest)
-6. Testes e2e (supertest + Fastify)
+5. Testes unitários (Jest) — timeout 30s (bcrypt)
+6. Testes e2e — timeout 30s (bcrypt)
 7. Seed data se aplicável
 8. Lint + Build + Testes passando
 9. Commit e abertura de PR
