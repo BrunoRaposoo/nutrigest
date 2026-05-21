@@ -52,8 +52,8 @@ A nutricionista controla o estoque de bebidas (frigobares dos leitos 101-110) e 
 
 ## Funcionalidades MVP
 
-- Autenticação JWT com guards por role
-- CRUD de produtos
+- [x] Autenticação JWT com guards por role
+- [x] CRUD de produtos
 - Definição de padrão de frigobar por quarto
 - Entrada de mercadorias
 - Reposição de frigobar (mobile-first)

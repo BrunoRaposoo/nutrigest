@@ -108,6 +108,16 @@ docker compose down          # Para serviços
 | POST | `/auth/forgot-password` | — | Solicitar token de reset de senha |
 | POST | `/auth/reset-password` | — | Resetar senha com token |
 
+### Products (`/products`)
+
+| Método | Rota | Auth | Roles | Descrição |
+|---|---|---|---|---|
+| GET | `/products` | JWT | ADMIN, TECHNICIAN, OPERATOR | Listar todos |
+| GET | `/products/:id` | JWT | ADMIN, TECHNICIAN, OPERATOR | Buscar por ID |
+| POST | `/products` | JWT | ADMIN, TECHNICIAN | Criar |
+| PATCH | `/products/:id` | JWT | ADMIN, TECHNICIAN | Atualizar |
+| DELETE | `/products/:id` | JWT | ADMIN | Remover |
+
 ### Users (`/users`) — admin only
 
 | Método | Rota | Auth | Descrição |

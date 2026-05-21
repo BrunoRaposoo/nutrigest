@@ -2,7 +2,7 @@
 
 ## Fase 1: Backend (API)
 
-### Etapa atual: Auth + Users
+### Etapa atual: Auth + Users ✅
 - [x] 1.1 Register
 - [x] 1.2 Login
 - [x] 1.3 Refresh Token
@@ -11,8 +11,8 @@
 - [x] 1.5 User CRUD (admin)
 - [x] 1.6 Profile (/me)
 
-### Próximas etapas
-- [ ] 2. Products CRUD
+### Etapa: Products ✅
+- [x] 2. Products CRUD
 - [ ] 3. CentralStock
 - [ ] 4. MinibarStandard
 - [ ] 5. StockMovement — IN (entrada mercadorias)

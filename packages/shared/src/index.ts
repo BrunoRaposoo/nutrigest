@@ -1,2 +1,7 @@
-// Tipos e enums compartilhados entre API e Web
-// Serão populados durante o desenvolvimento
+export const ProductCategory = {
+  BEVERAGE: 'BEVERAGE',
+  MEAL: 'MEAL',
+} as const;
+
+export type ProductCategory =
+  (typeof ProductCategory)[keyof typeof ProductCategory];
