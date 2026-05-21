@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import {
   ConflictException,
   Injectable,
@@ -5,10 +6,11 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { eq } from 'drizzle-orm';
+import { eq, gt } from 'drizzle-orm';
 import { DbService } from '../db/db.service';
-import { users } from '../db/schema';
+import { refreshTokens, users } from '../db/schema';
 import type { LoginData } from './dto/login.dto';
+import type { RefreshData } from './dto/refresh.dto';
 import type { RegisterData } from './dto/register.dto';
 
 @Injectable()
@@ -70,20 +72,76 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    const payload = { sub: user.id, email: user.email, role: user.role };
+    const tokens = await this.generateTokens(user.id, user.email, user.role);
+
+    return {
+      ...tokens,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    };
+  }
+
+  private async generateTokens(userId: string, email: string, role: string) {
+    const payload = { sub: userId, email, role };
 
     const accessToken = this.jwtService.sign(payload, {
       expiresIn: '15m',
     });
 
-    const refreshToken = this.jwtService.sign(payload, {
-      expiresIn: '7d',
-      secret: process.env.JWT_REFRESH_SECRET ?? 'dev-refresh-secret',
+    const rawRefreshToken = randomBytes(48).toString('hex');
+    const refreshTokenHash = await bcrypt.hash(rawRefreshToken, 10);
+
+    await this.db.db.insert(refreshTokens).values({
+      userId,
+      tokenHash: refreshTokenHash,
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     });
 
+    return { accessToken, refreshToken: rawRefreshToken };
+  }
+
+  async refresh(dto: RefreshData) {
+    const storedTokens = await this.db.db
+      .select()
+      .from(refreshTokens)
+      .where(gt(refreshTokens.expiresAt, new Date()));
+
+    let matchedToken: typeof refreshTokens.$inferSelect | null = null;
+
+    for (const stored of storedTokens) {
+      const isMatch = await bcrypt.compare(dto.refreshToken, stored.tokenHash);
+      if (isMatch) {
+        matchedToken = stored;
+        break;
+      }
+    }
+
+    if (!matchedToken) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    await this.db.db
+      .delete(refreshTokens)
+      .where(eq(refreshTokens.id, matchedToken.id));
+
+    const [user] = await this.db.db
+      .select()
+      .from(users)
+      .where(eq(users.id, matchedToken.userId))
+      .limit(1);
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    const tokens = await this.generateTokens(user.id, user.email, user.role);
+
     return {
-      accessToken,
-      refreshToken,
+      ...tokens,
       user: {
         id: user.id,
         name: user.name,

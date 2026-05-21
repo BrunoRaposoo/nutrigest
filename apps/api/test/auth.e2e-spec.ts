@@ -100,6 +100,45 @@ describe('Auth (e2e)', () => {
     expect(res.statusCode).toBe(401);
   });
 
+  it('/auth/refresh (POST) - success', async () => {
+    const email = `e2e-refresh-${Date.now()}@example.com`;
+
+    await app.inject({
+      method: 'POST',
+      url: '/auth/register',
+      payload: { name: 'Refresh E2E', email, password: 'password123' },
+    });
+
+    const loginRes = await app.inject({
+      method: 'POST',
+      url: '/auth/login',
+      payload: { email, password: 'password123' },
+    });
+    const loginBody = JSON.parse(loginRes.body);
+
+    const refreshRes = await app.inject({
+      method: 'POST',
+      url: '/auth/refresh',
+      payload: { refreshToken: loginBody.refreshToken },
+    });
+
+    expect(refreshRes.statusCode).toBe(201);
+    const refreshBody = JSON.parse(refreshRes.body);
+    expect(refreshBody).toHaveProperty('accessToken');
+    expect(refreshBody).toHaveProperty('refreshToken');
+    expect(refreshBody.refreshToken).not.toBe(loginBody.refreshToken);
+  });
+
+  it('/auth/refresh (POST) - reject invalid token', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/auth/refresh',
+      payload: { refreshToken: 'invalid-token' },
+    });
+
+    expect(res.statusCode).toBe(401);
+  });
+
   it('/auth/register (POST) - validation error', async () => {
     const res = await app.inject({
       method: 'POST',

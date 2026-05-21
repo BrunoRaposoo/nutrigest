@@ -93,4 +93,49 @@ describe('AuthService', () => {
       }),
     ).rejects.toThrow(UnauthorizedException);
   });
+
+  it('should refresh tokens successfully', async () => {
+    const email = `refresh-${Date.now()}@example.com`;
+
+    await service.register({
+      name: 'Refresh Test',
+      email,
+      password: 'password123',
+    });
+
+    const loginResult = await service.login({ email, password: 'password123' });
+
+    const refreshResult = await service.refresh({
+      refreshToken: loginResult.refreshToken,
+    });
+
+    expect(refreshResult).toHaveProperty('accessToken');
+    expect(refreshResult).toHaveProperty('refreshToken');
+    expect(refreshResult.refreshToken).not.toBe(loginResult.refreshToken);
+    expect(refreshResult.user.email).toBe(email);
+  });
+
+  it('should reject already-used refresh token (reuse detection)', async () => {
+    const email = `reuse-${Date.now()}@example.com`;
+
+    await service.register({
+      name: 'Reuse Test',
+      email,
+      password: 'password123',
+    });
+
+    const loginResult = await service.login({ email, password: 'password123' });
+
+    await service.refresh({ refreshToken: loginResult.refreshToken });
+
+    await expect(
+      service.refresh({ refreshToken: loginResult.refreshToken }),
+    ).rejects.toThrow(UnauthorizedException);
+  });
+
+  it('should reject invalid refresh token', async () => {
+    await expect(
+      service.refresh({ refreshToken: 'invalid-token-value' }),
+    ).rejects.toThrow(UnauthorizedException);
+  });
 });

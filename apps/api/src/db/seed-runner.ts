@@ -1,9 +1,9 @@
 import 'dotenv/config';
 
-import { drizzle } from 'drizzle-orm/node-postgres';
-import { eq } from 'drizzle-orm';
-import { Pool } from 'pg';
 import * as bcrypt from 'bcrypt';
+import { eq } from 'drizzle-orm';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import { Pool } from 'pg';
 import { users } from './schema/users';
 
 async function main() {
