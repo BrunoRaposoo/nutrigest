@@ -8,7 +8,7 @@
 - [x] 1.3 Refresh Token
 - [x] 1.4 Password Recovery
 - [x] Logout + login destrutivo (sessão única)
-- [ ] 1.5 User CRUD (admin)
+- [x] 1.5 User CRUD (admin)
 - [ ] 1.6 Profile (/me)
 
 ### Próximas etapas
