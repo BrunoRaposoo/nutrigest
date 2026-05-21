@@ -106,6 +106,23 @@ docker compose down          # Para serviços
 | POST | `/auth/forgot-password` | — | Solicitar token de reset de senha |
 | POST | `/auth/reset-password` | — | Resetar senha com token |
 
+### Users (`/users`) — admin only
+
+| Método | Rota | Auth | Descrição |
+|---|---|---|---|
+| GET | `/users` | JWT + ADMIN | Listar todos os usuários |
+| GET | `/users/:id` | JWT + ADMIN | Buscar usuário por ID |
+| POST | `/users` | JWT + ADMIN | Criar novo usuário |
+| PATCH | `/users/:id` | JWT + ADMIN | Atualizar usuário |
+| DELETE | `/users/:id` | JWT + ADMIN | Deletar usuário |
+
+### RBAC
+
+- **Roles:** `ADMIN`, `TECHNICIAN`, `OPERATOR`
+- `@Roles('ADMIN')` — decorator para restringir endpoints por role
+- `RolesGuard` + `JwtAuthGuard` — aplicados globalmente ou por controller
+- Apenas `ADMIN` tem acesso aos endpoints `/users/*`
+
 ### Segurança
 
 - **Sessão única:** Ao fazer login, todos os refresh tokens antigos do usuário são deletados
