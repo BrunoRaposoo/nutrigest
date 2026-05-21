@@ -60,6 +60,46 @@ describe('Auth (e2e)', () => {
     expect(res.statusCode).toBe(409);
   });
 
+  it('/auth/login (POST) - success', async () => {
+    const email = `e2e-login-${Date.now()}@example.com`;
+
+    await app.inject({
+      method: 'POST',
+      url: '/auth/register',
+      payload: { name: 'Login E2E', email, password: 'password123' },
+    });
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/auth/login',
+      payload: { email, password: 'password123' },
+    });
+
+    expect(res.statusCode).toBe(201);
+    const body = JSON.parse(res.body);
+    expect(body).toHaveProperty('accessToken');
+    expect(body).toHaveProperty('refreshToken');
+    expect(body.user.email).toBe(email);
+  });
+
+  it('/auth/login (POST) - wrong password', async () => {
+    const email = `e2e-login-wrong-${Date.now()}@example.com`;
+
+    await app.inject({
+      method: 'POST',
+      url: '/auth/register',
+      payload: { name: 'Wrong PW', email, password: 'password123' },
+    });
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/auth/login',
+      payload: { email, password: 'wrongpassword' },
+    });
+
+    expect(res.statusCode).toBe(401);
+  });
+
   it('/auth/register (POST) - validation error', async () => {
     const res = await app.inject({
       method: 'POST',
