@@ -1,5 +1,6 @@
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
+import { CentralStockService } from '../central-stock/central-stock.service';
 import { DbService } from '../db/db.service';
 import { LocalStorageService } from '../storage/local-storage.service';
 import { STORAGE_SERVICE } from '../storage/storage.service';
@@ -8,12 +9,15 @@ import { ProductsService } from './products.service';
 describe('ProductsService', () => {
   let service: ProductsService;
   let db: DbService;
+  let centralStockService: CentralStockService;
+  let module: TestingModule;
 
   beforeAll(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    module = await Test.createTestingModule({
       providers: [
         ProductsService,
         DbService,
+        CentralStockService,
         {
           provide: STORAGE_SERVICE,
           useClass: LocalStorageService,
@@ -22,6 +26,7 @@ describe('ProductsService', () => {
     }).compile();
 
     service = module.get<ProductsService>(ProductsService);
+    centralStockService = module.get<CentralStockService>(CentralStockService);
     db = module.get<DbService>(DbService);
     await db.onModuleInit();
   });
@@ -133,6 +138,22 @@ describe('ProductsService', () => {
       await expect(
         service.remove('00000000-0000-0000-0000-000000000000'),
       ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw BadRequestException when stock > 0', async () => {
+      const created = await service.create({
+        name: 'Stock Block Test',
+        category: 'BEVERAGE',
+      });
+
+      await centralStockService.update(created.id, { quantity: 5 });
+
+      await expect(service.remove(created.id)).rejects.toThrow(
+        BadRequestException,
+      );
+
+      // Reset stock so cleanup works
+      await centralStockService.update(created.id, { quantity: 0 });
     });
   });
 
