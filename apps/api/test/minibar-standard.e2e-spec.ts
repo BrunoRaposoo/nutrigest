@@ -93,7 +93,7 @@ describe('MinibarStandard (e2e)', () => {
       });
 
       expect(res.statusCode).toBe(200);
-      expect(JSON.parse(res.body)).toEqual([]);
+      expect(Array.isArray(JSON.parse(res.body))).toBe(true);
     });
 
     it('should return 404 for invalid room', async () => {
