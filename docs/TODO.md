@@ -15,8 +15,7 @@
 - [x] 2. Products CRUD
 - [x] 2.1 Product Images (optional upload)
 - [x] 3. CentralStock (tabela + visualização + ajuste manual)
-- [ ] 4. MinibarStandard
-- [ ] 4. MinibarStandard
+- [x] 4. MinibarStandard
 - [ ] 5. StockMovement — IN (entrada mercadorias)
 - [ ] 6. StockMovement — REPLENISH (reposição frigobar)
 - [ ] 7. StockMovement — MEAL_OUT (retirada marmita)
