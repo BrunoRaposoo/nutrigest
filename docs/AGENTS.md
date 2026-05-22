@@ -109,6 +109,14 @@ docker compose down          # Para serviços
 | POST | `/auth/forgot-password` | — | Solicitar token de reset de senha |
 | POST | `/auth/reset-password` | — | Resetar senha com token |
 
+### Central Stock (`/central-stock`)
+
+| Método | Rota | Auth | Roles | Descrição |
+|--------|------|------|-------|-----------|
+| GET | `/central-stock` | JWT | ADMIN, TECHNICIAN, OPERATOR | Listar estoque (com dados do produto) |
+| GET | `/central-stock/:productId` | JWT | ADMIN, TECHNICIAN, OPERATOR | Buscar estoque por ID do produto |
+| PATCH | `/central-stock/:productId` | JWT | ADMIN, TECHNICIAN | Ajustar quantidade (valor absoluto) |
+
 ### Products (`/products`)
 
 | Método | Rota | Auth | Roles | Descrição |
