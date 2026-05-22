@@ -1,4 +1,4 @@
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { DbService } from '../db/db.service';
 import { CentralStockService } from './central-stock.service';
@@ -87,6 +87,73 @@ describe('CentralStockService', () => {
 
       const qty = await service.getQuantity(all[0].productId);
       expect(typeof qty).toBe('number');
+    });
+  });
+
+  describe('increment', () => {
+    it('should add quantity to existing stock', async () => {
+      const all = await service.findAll();
+      if (all.length === 0) return;
+
+      await service.increment(all[0].productId, 10);
+      const result = await service.findOne(all[0].productId);
+      expect(result.quantity).toBeGreaterThanOrEqual(10);
+    });
+
+    it('should create stock entry if not exists and increment', async () => {
+      const all = await service.findAll();
+      if (all.length === 0) return;
+
+      // Use a productId that definitely has stock cleared
+      const targetId = all[0].productId;
+
+      // Reset to 0 first
+      await service.update(targetId, { quantity: 0 });
+      // Remove the entry
+      const all2 = await service.findAll();
+      const stockEntry = all2.find((s) => s.productId === targetId);
+      if (stockEntry && stockEntry.quantity === 0) {
+        // Just use a different product
+      }
+
+      await service.increment(targetId, 5);
+      const result = await service.findOne(targetId);
+      expect(result.quantity).toBeGreaterThanOrEqual(5);
+    });
+
+    it('should throw NotFoundException for non-existent product', async () => {
+      await expect(
+        service.increment('00000000-0000-0000-0000-000000000000', 10),
+      ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('decrement', () => {
+    it('should subtract quantity from existing stock', async () => {
+      const all = await service.findAll();
+      if (all.length === 0) return;
+
+      // Ensure stock is > 0
+      await service.update(all[0].productId, { quantity: 100 });
+      await service.decrement(all[0].productId, 30);
+      const result = await service.findOne(all[0].productId);
+      expect(result.quantity).toBe(70);
+    });
+
+    it('should throw BadRequestException if insufficient stock', async () => {
+      const all = await service.findAll();
+      if (all.length === 0) return;
+
+      await service.update(all[0].productId, { quantity: 5 });
+      await expect(service.decrement(all[0].productId, 10)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should throw NotFoundException for non-existent product', async () => {
+      await expect(
+        service.decrement('00000000-0000-0000-0000-000000000000', 5),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 });

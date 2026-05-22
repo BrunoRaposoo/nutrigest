@@ -16,9 +16,9 @@
 - [x] 2.1 Product Images (optional upload)
 - [x] 3. CentralStock (tabela + visualização + ajuste manual)
 - [x] 4. MinibarStandard
-- [ ] 5. StockMovement — IN (entrada mercadorias)
-- [ ] 6. StockMovement — REPLENISH (reposição frigobar)
-- [ ] 7. StockMovement — MEAL_OUT (retirada marmita)
+- [x] 5. StockMovement — IN (entrada mercadorias)
+- [x] 6. StockMovement — REPLENISH (reposição frigobar)
+- [x] 7. StockMovement — MEAL_OUT (retirada marmita)
 - [ ] 8. Dashboard e Relatórios
 - [ ] 9. Audit Logs
 
