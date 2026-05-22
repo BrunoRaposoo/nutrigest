@@ -342,7 +342,7 @@ pnpm --filter @nutrigest/api test:e2e         # Rodar e2e
 
 ```env
 # apps/api/.env
-DATABASE_URL=postgresql://nutrigest:nutrigest@localhost:5434/nutrigest
+DATABASE_URL=postgresql://user:password@localhost:5434/database
 PORT=3000
 CORS_ORIGIN=http://localhost:5173
 JWT_SECRET=<seu-secret>
