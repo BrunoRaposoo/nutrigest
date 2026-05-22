@@ -4,7 +4,7 @@ import * as bcrypt from 'bcrypt';
 import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
-import { users } from './schema/users';
+import { products, users } from './schema';
 
 async function main() {
   const databaseUrl = process.env.DATABASE_URL;
@@ -25,23 +25,47 @@ async function main() {
 
   if (existing.length > 0) {
     console.log('Admin user already exists, skipping seed');
-    await pool.end();
-    return;
+  } else {
+    const passwordHash = await bcrypt.hash('Admin@123', 10);
+
+    await db.insert(users).values({
+      name: 'Admin',
+      email: 'admin@nutrigest.com',
+      passwordHash,
+      role: 'ADMIN',
+    });
+
+    console.log('Admin user seeded successfully');
+    console.log('  Email: admin@nutrigest.com');
+    console.log('  Password: Admin@123');
+    console.log('  Role: ADMIN');
   }
 
-  const passwordHash = await bcrypt.hash('Admin@123', 10);
+  const existingProducts = await db.select().from(products).limit(1);
 
-  await db.insert(users).values({
-    name: 'Admin',
-    email: 'admin@nutrigest.com',
-    passwordHash,
-    role: 'ADMIN',
-  });
+  if (existingProducts.length > 0) {
+    console.log('Products already exist, skipping seed');
+  } else {
+    const sampleProducts = [
+      { name: 'Água Mineral 500ml', category: 'BEVERAGE' as const, unit: 'un' },
+      {
+        name: 'Suco de Laranja 300ml',
+        category: 'BEVERAGE' as const,
+        unit: 'un',
+      },
+      {
+        name: 'Refrigerante Cola 350ml',
+        category: 'BEVERAGE' as const,
+        unit: 'un',
+      },
+      { name: 'Marmita Executiva', category: 'MEAL' as const, unit: 'un' },
+      { name: 'Marmita Light', category: 'MEAL' as const, unit: 'un' },
+      { name: 'Marmita Vegetariana', category: 'MEAL' as const, unit: 'un' },
+    ];
 
-  console.log('Admin user seeded successfully');
-  console.log('  Email: admin@nutrigest.com');
-  console.log('  Password: Admin@123');
-  console.log('  Role: ADMIN');
+    await db.insert(products).values(sampleProducts);
+    console.log(`${sampleProducts.length} products seeded`);
+  }
 
   await pool.end();
 }

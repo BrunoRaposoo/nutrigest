@@ -3,7 +3,7 @@
   "rootDir": ".",
   "testEnvironment": "node",
   "testTimeout": 30000,
-  "setupFiles": ["dotenv/config"],
+  "setupFiles": ["./setup.ts"],
   "testRegex": ".e2e-spec.ts$",
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
