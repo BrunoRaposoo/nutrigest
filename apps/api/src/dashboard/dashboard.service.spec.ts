@@ -57,7 +57,6 @@ describe('DashboardService', () => {
     });
 
     it('should only include products with quantity <= 5 in lowStockAlerts', async () => {
-      // Set a product to low stock
       const allProducts = await productsService.findAll();
       if (allProducts.length === 0) return;
 
@@ -121,6 +120,90 @@ describe('DashboardService', () => {
       );
       expect(Array.isArray(result)).toBe(true);
       expect(result.length).toBe(0);
+    });
+  });
+
+  // -- CSV --
+
+  describe('getConsumptionByRoomCsv', () => {
+    it('should return a CSV string with header row', async () => {
+      const csv = await service.getConsumptionByRoomCsv({});
+      expect(typeof csv).toBe('string');
+      const lines = csv.trim().split('\n');
+      expect(lines.length).toBeGreaterThanOrEqual(1);
+      expect(lines[0]).toBe('room,product,quantity');
+    });
+  });
+
+  describe('getMealRankingCsv', () => {
+    it('should return a CSV string with header row', async () => {
+      const csv = await service.getMealRankingCsv({ limit: 10 });
+      expect(typeof csv).toBe('string');
+      const lines = csv.trim().split('\n');
+      expect(lines.length).toBeGreaterThanOrEqual(1);
+      expect(lines[0]).toBe('productName,productCategory,totalQuantity');
+    });
+  });
+
+  describe('getStockHistoryCsv', () => {
+    it('should return a CSV string with header row for existing product', async () => {
+      const allProducts = await productsService.findAll();
+      if (allProducts.length === 0) return;
+
+      const csv = await service.getStockHistoryCsv(allProducts[0].id, {});
+      expect(typeof csv).toBe('string');
+      const lines = csv.trim().split('\n');
+      expect(lines[0]).toBe('type,quantity,runningBalance,createdAt');
+    });
+  });
+
+  // -- Charts --
+
+  describe('getMonthlyConsumption', () => {
+    it('should return array with month, replenishQty, mealOutQty', async () => {
+      const result = await service.getMonthlyConsumption({});
+      expect(Array.isArray(result)).toBe(true);
+      if (result.length > 0) {
+        expect(result[0]).toHaveProperty('month');
+        expect(result[0]).toHaveProperty('replenishQty');
+        expect(result[0]).toHaveProperty('mealOutQty');
+      }
+    });
+  });
+
+  describe('getRoomComparison', () => {
+    it('should return array of room consumption totals', async () => {
+      const result = await service.getRoomComparison({});
+      expect(Array.isArray(result)).toBe(true);
+      if (result.length > 0) {
+        expect(result[0]).toHaveProperty('room');
+        expect(result[0]).toHaveProperty('totalQuantity');
+      }
+    });
+  });
+
+  describe('getCategoryDistribution', () => {
+    it('should return array with BEVERAGE and MEAL categories', async () => {
+      const result = await service.getCategoryDistribution();
+      expect(Array.isArray(result)).toBe(true);
+      expect(result.length).toBe(2);
+      expect(result[0]).toHaveProperty('category');
+      expect(result[0]).toHaveProperty('quantity');
+      expect(result[0]).toHaveProperty('percentage');
+    });
+  });
+
+  describe('getStockEvolution', () => {
+    it('should return array with date and quantity for existing product', async () => {
+      const allProducts = await productsService.findAll();
+      if (allProducts.length === 0) return;
+
+      const result = await service.getStockEvolution(allProducts[0].id, {});
+      expect(Array.isArray(result)).toBe(true);
+      if (result.length > 0) {
+        expect(result[0]).toHaveProperty('date');
+        expect(result[0]).toHaveProperty('quantity');
+      }
     });
   });
 });
