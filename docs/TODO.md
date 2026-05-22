@@ -1,26 +1,19 @@
 # Nutrigest — Roadmap
 
-## Fase 1: Backend (API)
+## Fase 1: Backend (API) ✅
 
-### Etapa atual: Auth + Users ✅
-- [x] 1.1 Register
-- [x] 1.2 Login
-- [x] 1.3 Refresh Token
-- [x] 1.4 Password Recovery
-- [x] Logout + login destrutivo (sessão única)
-- [x] 1.5 User CRUD (admin)
-- [x] 1.6 Profile (/me)
-
-### Etapa: Products ✅
-- [x] 2. Products CRUD
-- [x] 2.1 Product Images (optional upload)
-- [x] 3. CentralStock (tabela + visualização + ajuste manual)
+- [x] 1.1 Auth (register, login, refresh token, password recovery, logout)
+- [x] 1.2 User CRUD (admin)
+- [x] 1.3 Profile (/me)
+- [x] 2. Products CRUD + Images
+- [x] 3. CentralStock
 - [x] 4. MinibarStandard
-- [x] 5. StockMovement — IN (entrada mercadorias)
-- [x] 6. StockMovement — REPLENISH (reposição frigobar)
-- [x] 7. StockMovement — MEAL_OUT (retirada marmita)
-- [ ] 8. Dashboard e Relatórios
-- [ ] 9. Audit Logs
+- [x] 5. StockMovements (IN, REPLENISH, MEAL_OUT)
+- [x] 6. Dashboard & Reports (summary, consumption, ranking, stock history)
+- [x] 7. Dashboard Charts (monthly consumption, room comparison, category distribution, stock evolution)
+- [x] 8. CSV Export
 
-## Fase 2: Frontend (Web)
-- [ ] A definir após API completa
+## Fase 2: Frontend (Web) — Em breve
+
+## Fase 3: Melhorias Futuras
+- [ ] Audit Logs
