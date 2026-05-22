@@ -221,4 +221,162 @@ describe('Dashboard (e2e)', () => {
       expect(body.length).toBe(0);
     });
   });
+
+  // -- CSV Export --
+
+  describe('GET /dashboard/consumption-by-room/csv', () => {
+    it('should reject unauthenticated', async () => {
+      const res = await app.inject({
+        method: 'GET',
+        url: '/dashboard/consumption-by-room/csv',
+      });
+
+      expect(res.statusCode).toBe(401);
+    });
+
+    it('should return CSV for ADMIN', async () => {
+      const { accessToken } = await registerAndLogin('ADMIN');
+
+      const res = await app.inject({
+        method: 'GET',
+        url: '/dashboard/consumption-by-room/csv',
+        headers: { authorization: `Bearer ${accessToken}` },
+      });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toContain('room,product,quantity');
+    });
+  });
+
+  describe('GET /dashboard/meal-ranking/csv', () => {
+    it('should return CSV for ADMIN', async () => {
+      const { accessToken } = await registerAndLogin('ADMIN');
+
+      const res = await app.inject({
+        method: 'GET',
+        url: '/dashboard/meal-ranking/csv',
+        headers: { authorization: `Bearer ${accessToken}` },
+      });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toContain('productName,productCategory,totalQuantity');
+    });
+  });
+
+  describe('GET /dashboard/stock-history/:productId/csv', () => {
+    it('should return CSV for ADMIN', async () => {
+      const { accessToken } = await registerAndLogin('ADMIN');
+      const product = await createProduct(accessToken);
+
+      const res = await app.inject({
+        method: 'GET',
+        url: `/dashboard/stock-history/${product.id}/csv`,
+        headers: { authorization: `Bearer ${accessToken}` },
+      });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toContain('type,quantity,runningBalance,createdAt');
+    });
+  });
+
+  // -- Charts --
+
+  describe('GET /dashboard/charts/monthly-consumption', () => {
+    it('should reject unauthenticated', async () => {
+      const res = await app.inject({
+        method: 'GET',
+        url: '/dashboard/charts/monthly-consumption',
+      });
+
+      expect(res.statusCode).toBe(401);
+    });
+
+    it('should reject OPERATOR', async () => {
+      const { accessToken } = await registerAndLogin('OPERATOR');
+
+      const res = await app.inject({
+        method: 'GET',
+        url: '/dashboard/charts/monthly-consumption',
+        headers: { authorization: `Bearer ${accessToken}` },
+      });
+
+      expect(res.statusCode).toBe(403);
+    });
+
+    it('should return monthly consumption data for ADMIN', async () => {
+      const { accessToken } = await registerAndLogin('ADMIN');
+
+      const res = await app.inject({
+        method: 'GET',
+        url: '/dashboard/charts/monthly-consumption',
+        headers: { authorization: `Bearer ${accessToken}` },
+      });
+
+      expect(res.statusCode).toBe(200);
+      const body = JSON.parse(res.body);
+      expect(Array.isArray(body)).toBe(true);
+      if (body.length > 0) {
+        expect(body[0]).toHaveProperty('month');
+        expect(body[0]).toHaveProperty('replenishQty');
+        expect(body[0]).toHaveProperty('mealOutQty');
+      }
+    });
+  });
+
+  describe('GET /dashboard/charts/room-comparison', () => {
+    it('should return room comparison for ADMIN', async () => {
+      const { accessToken } = await registerAndLogin('ADMIN');
+
+      const res = await app.inject({
+        method: 'GET',
+        url: '/dashboard/charts/room-comparison',
+        headers: { authorization: `Bearer ${accessToken}` },
+      });
+
+      expect(res.statusCode).toBe(200);
+      const body = JSON.parse(res.body);
+      expect(Array.isArray(body)).toBe(true);
+      if (body.length > 0) {
+        expect(body[0]).toHaveProperty('room');
+        expect(body[0]).toHaveProperty('totalQuantity');
+      }
+    });
+  });
+
+  describe('GET /dashboard/charts/category-distribution', () => {
+    it('should return category distribution for ADMIN', async () => {
+      const { accessToken } = await registerAndLogin('ADMIN');
+
+      const res = await app.inject({
+        method: 'GET',
+        url: '/dashboard/charts/category-distribution',
+        headers: { authorization: `Bearer ${accessToken}` },
+      });
+
+      expect(res.statusCode).toBe(200);
+      const body = JSON.parse(res.body);
+      expect(Array.isArray(body)).toBe(true);
+      expect(body.length).toBe(2);
+      expect(body[0]).toHaveProperty('category');
+      expect(body[0]).toHaveProperty('quantity');
+      expect(body[0]).toHaveProperty('percentage');
+    });
+  });
+
+  describe('GET /dashboard/charts/stock-evolution/:productId', () => {
+    it('should return stock evolution for ADMIN', async () => {
+      const { accessToken } = await registerAndLogin('ADMIN');
+      const product = await createProduct(accessToken);
+
+      const res = await app.inject({
+        method: 'GET',
+        url: `/dashboard/charts/stock-evolution/${product.id}`,
+        headers: { authorization: `Bearer ${accessToken}` },
+      });
+
+      expect(res.statusCode).toBe(200);
+      const body = JSON.parse(res.body);
+      expect(Array.isArray(body)).toBe(true);
+    });
+  });
 });

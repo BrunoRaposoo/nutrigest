@@ -6,6 +6,7 @@ import { products } from '../db/schema/products';
 import { stockMovements } from '../db/schema/stock-movements';
 import { ProductsService } from '../products/products.service';
 import { StockMovementsService } from '../stock-movements/stock-movements.service';
+import type { ChartsQueryData } from './dto/charts-query.dto';
 import type { ConsumptionReportData } from './dto/consumption-report.dto';
 import type { MealRankingData } from './dto/meal-ranking.dto';
 import type { StockHistoryData } from './dto/stock-history.dto';
@@ -178,5 +179,247 @@ export class DashboardService {
         createdAt: row.createdAt,
       };
     });
+  }
+
+  // -- CSV Helpers --
+
+  private toCsv(
+    data: Array<Record<string, unknown>>,
+    columns: string[],
+  ): string {
+    const header = columns.join(',');
+    const rows = data.map((row) =>
+      columns
+        .map((col) => {
+          const val = row[col];
+          if (val === null || val === undefined) return '';
+          const str = String(val);
+          return str.includes(',') || str.includes('"') || str.includes('\n')
+            ? `"${str.replace(/"/g, '""')}"`
+            : str;
+        })
+        .join(','),
+    );
+    return [header, ...rows].join('\n');
+  }
+
+  async getConsumptionByRoomCsv(
+    filters: ConsumptionReportData,
+  ): Promise<string> {
+    const data = await this.getConsumptionByRoom(filters);
+    const flat: Array<Record<string, unknown>> = [];
+    for (const room of data) {
+      for (const item of room.items) {
+        flat.push({
+          room: room.room,
+          product: item.productName,
+          quantity: item.quantity,
+        });
+      }
+    }
+    return this.toCsv(flat, ['room', 'product', 'quantity']);
+  }
+
+  async getMealRankingCsv(filters: MealRankingData): Promise<string> {
+    const data = await this.getMealRanking(filters);
+    return this.toCsv(data as unknown as Array<Record<string, unknown>>, [
+      'productName',
+      'productCategory',
+      'totalQuantity',
+    ]);
+  }
+
+  async getStockHistoryCsv(
+    productId: string,
+    filters: StockHistoryData,
+  ): Promise<string> {
+    const data = await this.getStockHistory(productId, filters);
+    return this.toCsv(data as unknown as Array<Record<string, unknown>>, [
+      'type',
+      'quantity',
+      'runningBalance',
+      'createdAt',
+    ]);
+  }
+
+  // -- Charts --
+
+  async getMonthlyConsumption(filters: ChartsQueryData) {
+    const conditions: Array<ReturnType<typeof eq>> = [];
+
+    if (filters.from) {
+      conditions.push(gte(stockMovements.createdAt, new Date(filters.from)));
+    }
+    if (filters.to) {
+      conditions.push(lte(stockMovements.createdAt, new Date(filters.to)));
+    }
+
+    const rows = await this.db.db
+      .select({
+        month: sql<string>`to_char(${stockMovements.createdAt}, 'YYYY-MM')`,
+        type: stockMovements.type,
+        totalQuantity: sql<number>`sum(${stockMovements.quantity})`,
+      })
+      .from(stockMovements)
+      .where(and(...conditions))
+      .groupBy(
+        sql`to_char(${stockMovements.createdAt}, 'YYYY-MM')`,
+        stockMovements.type,
+      )
+      .orderBy(sql`to_char(${stockMovements.createdAt}, 'YYYY-MM')`);
+
+    const grouped: Record<
+      string,
+      { month: string; replenishQty: number; mealOutQty: number }
+    > = {};
+
+    for (const row of rows) {
+      if (!grouped[row.month]) {
+        grouped[row.month] = {
+          month: row.month,
+          replenishQty: 0,
+          mealOutQty: 0,
+        };
+      }
+      if (row.type === 'REPLENISH') {
+        grouped[row.month].replenishQty += Number(row.totalQuantity);
+      } else if (row.type === 'MEAL_OUT') {
+        grouped[row.month].mealOutQty += Number(row.totalQuantity);
+      }
+    }
+
+    return Object.values(grouped).sort((a, b) =>
+      a.month.localeCompare(b.month),
+    );
+  }
+
+  async getRoomComparison(filters: ChartsQueryData) {
+    const conditions = [eq(stockMovements.type, 'REPLENISH')];
+
+    if (filters.from) {
+      conditions.push(gte(stockMovements.createdAt, new Date(filters.from)));
+    }
+    if (filters.to) {
+      conditions.push(lte(stockMovements.createdAt, new Date(filters.to)));
+    }
+
+    const rows = await this.db.db
+      .select({
+        room: stockMovements.room,
+        totalQuantity: sql<number>`sum(${stockMovements.quantity})`,
+      })
+      .from(stockMovements)
+      .where(and(...conditions))
+      .groupBy(stockMovements.room)
+      .orderBy(stockMovements.room);
+
+    return rows
+      .filter((r) => r.room !== null)
+      .map((r) => ({
+        room: r.room as number,
+        totalQuantity: Number(r.totalQuantity),
+      }));
+  }
+
+  async getCategoryDistribution() {
+    const [result] = await this.db.db
+      .select({
+        category: products.category,
+        quantity: sql<number>`coalesce(sum(${centralStock.quantity}), 0)`,
+      })
+      .from(centralStock)
+      // biome-ignore lint/suspicious/noExplicitAny: Drizzle type resolution workaround
+      .innerJoin(products as any, eq(centralStock.productId, products.id))
+      .groupBy(products.category);
+
+    const beverage =
+      result?.category === 'BEVERAGE' ? Number(result.quantity) : 0;
+    const meal = result?.category === 'MEAL' ? Number(result.quantity) : 0;
+    const total = beverage + meal || 1;
+
+    return [
+      {
+        category: 'BEVERAGE',
+        quantity: beverage,
+        percentage: Math.round((beverage / total) * 100),
+      },
+      {
+        category: 'MEAL',
+        quantity: meal,
+        percentage: Math.round((meal / total) * 100),
+      },
+    ];
+  }
+
+  async getStockEvolution(productId: string, filters: ChartsQueryData) {
+    const conditions = [eq(stockMovements.productId, productId)];
+
+    if (filters.from) {
+      conditions.push(gte(stockMovements.createdAt, new Date(filters.from)));
+    }
+    if (filters.to) {
+      conditions.push(lte(stockMovements.createdAt, new Date(filters.to)));
+    }
+
+    const rows = await this.db.db
+      .select({
+        date: sql<string>`to_char(${stockMovements.createdAt}, 'YYYY-MM-DD')`,
+        quantity: sql<number>`sum(${stockMovements.quantity})`,
+        type: stockMovements.type,
+      })
+      .from(stockMovements)
+      .where(and(...conditions))
+      .groupBy(
+        sql`to_char(${stockMovements.createdAt}, 'YYYY-MM-DD')`,
+        stockMovements.type,
+      )
+      .orderBy(sql`to_char(${stockMovements.createdAt}, 'YYYY-MM-DD')`);
+
+    const daily: Record<string, { date: string; quantity: number }> = {};
+    let balance = 0;
+
+    const initialIn = filters.from
+      ? await this.db.db
+          .select({
+            total: sql<number>`coalesce(sum(${stockMovements.quantity}), 0)`,
+          })
+          .from(stockMovements)
+          .where(
+            and(
+              eq(stockMovements.productId, productId),
+              eq(stockMovements.type, 'IN'),
+              lte(stockMovements.createdAt, new Date(filters.from)),
+            ),
+          )
+      : [{ total: 0 }];
+
+    const initialOut = filters.from
+      ? await this.db.db
+          .select({
+            total: sql<number>`coalesce(sum(${stockMovements.quantity}), 0)`,
+          })
+          .from(stockMovements)
+          .where(
+            and(
+              eq(stockMovements.productId, productId),
+              sql`${stockMovements.type} != 'IN'`,
+              lte(stockMovements.createdAt, new Date(filters.from)),
+            ),
+          )
+      : [{ total: 0 }];
+
+    balance =
+      Number(initialIn[0]?.total ?? 0) - Number(initialOut[0]?.total ?? 0);
+
+    for (const row of rows) {
+      if (row.type === 'IN') {
+        balance += Number(row.quantity);
+      } else {
+        balance -= Number(row.quantity);
+      }
+      daily[row.date] = { date: row.date, quantity: balance };
+    }
+
+    return Object.values(daily).sort((a, b) => a.date.localeCompare(b.date));
   }
 }
