@@ -13,6 +13,7 @@
 
 ### Etapa: Products ✅
 - [x] 2. Products CRUD
+- [x] 2.1 Product Images (optional upload)
 - [ ] 3. CentralStock
 - [ ] 4. MinibarStandard
 - [ ] 5. StockMovement — IN (entrada mercadorias)
