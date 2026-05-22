@@ -74,7 +74,10 @@ export class MinibarStandardService {
       .select()
       .from(minibarStandard)
       .where(
-        and(eq(minibarStandard.room, room), eq(minibarStandard.productId, productId)),
+        and(
+          eq(minibarStandard.room, room),
+          eq(minibarStandard.productId, productId),
+        ),
       )
       .limit(1);
 
@@ -86,7 +89,10 @@ export class MinibarStandardService {
       .update(minibarStandard)
       .set({ standardQuantity: dto.standardQuantity })
       .where(
-        and(eq(minibarStandard.room, room), eq(minibarStandard.productId, productId)),
+        and(
+          eq(minibarStandard.room, room),
+          eq(minibarStandard.productId, productId),
+        ),
       )
       .returning();
 
@@ -102,7 +108,10 @@ export class MinibarStandardService {
       .select()
       .from(minibarStandard)
       .where(
-        and(eq(minibarStandard.room, room), eq(minibarStandard.productId, productId)),
+        and(
+          eq(minibarStandard.room, room),
+          eq(minibarStandard.productId, productId),
+        ),
       )
       .limit(1);
 
@@ -113,7 +122,10 @@ export class MinibarStandardService {
     await this.db.db
       .delete(minibarStandard)
       .where(
-        and(eq(minibarStandard.room, room), eq(minibarStandard.productId, productId)),
+        and(
+          eq(minibarStandard.room, room),
+          eq(minibarStandard.productId, productId),
+        ),
       );
   }
 }

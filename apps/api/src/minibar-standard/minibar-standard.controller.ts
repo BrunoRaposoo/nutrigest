@@ -1,4 +1,15 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, ParseIntPipe, Patch, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -32,7 +43,9 @@ export class MinibarStandardController {
 
   @Post(':room')
   @Roles('ADMIN', 'TECHNICIAN')
-  @ApiOperation({ summary: 'Add or replace a product in room standard (upsert)' })
+  @ApiOperation({
+    summary: 'Add or replace a product in room standard (upsert)',
+  })
   async add(
     @Param('room', ParseIntPipe) room: number,
     @Body() dto: AddMinibarItemDto,

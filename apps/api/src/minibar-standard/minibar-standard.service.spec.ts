@@ -1,6 +1,5 @@
 import { NotFoundException } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
-import { eq } from 'drizzle-orm';
 import { DbService } from '../db/db.service';
 import { products } from '../db/schema/products';
 import { MinibarStandardService } from './minibar-standard.service';

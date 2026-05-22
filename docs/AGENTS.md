@@ -117,6 +117,16 @@ docker compose down          # Para serviços
 | GET | `/central-stock/:productId` | JWT | ADMIN, TECHNICIAN, OPERATOR | Buscar estoque por ID do produto |
 | PATCH | `/central-stock/:productId` | JWT | ADMIN, TECHNICIAN | Ajustar quantidade (valor absoluto) |
 
+### Minibar Standard (`/minibar-standard`)
+
+| Método | Rota | Auth | Roles | Descrição |
+|--------|------|------|-------|-----------|
+| GET | `/minibar-standard/rooms` | JWT | ADMIN, TECHNICIAN, OPERATOR | Listar quartos disponíveis (101-110) |
+| GET | `/minibar-standard/:room` | JWT | ADMIN, TECHNICIAN, OPERATOR | Listar padrão do quarto |
+| POST | `/minibar-standard/:room` | JWT | ADMIN, TECHNICIAN | Adicionar/substituir item (upsert) |
+| PATCH | `/minibar-standard/:room/:productId` | JWT | ADMIN, TECHNICIAN | Atualizar quantidade padrão |
+| DELETE | `/minibar-standard/:room/:productId` | JWT | ADMIN, TECHNICIAN | Remover item (204) |
+
 ### Products (`/products`)
 
 | Método | Rota | Auth | Roles | Descrição |
