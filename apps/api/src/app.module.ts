@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from './auth/auth.module';
 import { CentralStockModule } from './central-stock/central-stock.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 import { DbModule } from './db/db.module';
 import { MinibarStandardModule } from './minibar-standard/minibar-standard.module';
 import { ProductsModule } from './products/products.module';
@@ -16,6 +17,7 @@ import { UsersModule } from './users/users.module';
     CentralStockModule,
     MinibarStandardModule,
     StockMovementsModule,
+    DashboardModule,
   ],
 })
 export class AppModule {}
