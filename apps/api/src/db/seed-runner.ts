@@ -4,7 +4,7 @@ import * as bcrypt from 'bcrypt';
 import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
-import { products, users } from './schema';
+import { centralStock, products, users } from './schema';
 
 async function main() {
   const databaseUrl = process.env.DATABASE_URL;
@@ -65,6 +65,26 @@ async function main() {
 
     await db.insert(products).values(sampleProducts);
     console.log(`${sampleProducts.length} products seeded`);
+  }
+
+  const existingStock = await db.select().from(centralStock).limit(1);
+
+  if (existingStock.length > 0) {
+    console.log('Central stock already exists, skipping seed');
+  } else {
+    const allProducts = await db.select({ id: products.id }).from(products);
+
+    if (allProducts.length > 0) {
+      await db
+        .insert(centralStock)
+        .values(
+          allProducts.map((p) => ({
+            productId: p.id,
+            quantity: 0,
+          })),
+        );
+      console.log(`${allProducts.length} central stock entries seeded`);
+    }
   }
 
   await pool.end();
