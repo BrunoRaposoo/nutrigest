@@ -1,4 +1,11 @@
-import { pgEnum, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+import {
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+  varchar,
+} from 'drizzle-orm/pg-core';
 
 export const productCategoryEnum = pgEnum('product_category', [
   'BEVERAGE',

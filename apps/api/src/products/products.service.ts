@@ -2,7 +2,10 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import { DbService } from '../db/db.service';
 import { products } from '../db/schema';
-import { STORAGE_SERVICE, type StorageService } from '../storage/storage.service';
+import {
+  STORAGE_SERVICE,
+  type StorageService,
+} from '../storage/storage.service';
 import type { CreateProductData } from './dto/create-product.dto';
 import type { UpdateProductData } from './dto/update-product.dto';
 

@@ -8,6 +8,8 @@ dist
 # Uploads
 uploads/*
 !uploads/.gitkeep
+apps/api/uploads/*
+!apps/api/uploads/.gitkeep
 
 # Drizzle
 drizzle/meta

@@ -18,7 +18,6 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
-import { FastifyRequest } from 'fastify';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -87,7 +86,13 @@ export class ProductsController {
   })
   async uploadImage(
     @Param('id') id: string,
-    @Req() req: FastifyRequest,
+    @Req() req: {
+      file: () => Promise<{
+        mimetype: string;
+        filename: string;
+        toBuffer: () => Promise<Buffer>;
+      } | null>;
+    },
   ) {
     const file = await req.file();
 

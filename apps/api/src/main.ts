@@ -1,5 +1,6 @@
 import 'dotenv/config';
 
+import { join } from 'node:path';
 import fastifyMultipart from '@fastify/multipart';
 import fastifyStatic from '@fastify/static';
 import { NestFactory } from '@nestjs/core';
@@ -9,7 +10,6 @@ import {
 } from '@nestjs/platform-fastify';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ZodValidationPipe } from 'nestjs-zod';
-import { join } from 'node:path';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 

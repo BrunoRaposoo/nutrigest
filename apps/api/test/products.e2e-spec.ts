@@ -1,3 +1,5 @@
+import { randomBytes } from 'node:crypto';
+import { join } from 'node:path';
 import fastifyMultipart from '@fastify/multipart';
 import fastifyStatic from '@fastify/static';
 import {
@@ -5,8 +7,6 @@ import {
   type NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import { Test, type TestingModule } from '@nestjs/testing';
-import { randomBytes } from 'node:crypto';
-import { join } from 'node:path';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { AppModule } from './../src/app.module';
 
@@ -15,7 +15,7 @@ function buildMultipartBody(
   mimeType: string,
   content?: Buffer,
 ): { body: Buffer; boundary: string } {
-  const boundary = '----WebKitFormBoundary' + randomBytes(8).toString('hex');
+  const boundary = `----WebKitFormBoundary${randomBytes(8).toString('hex')}`;
   const fileContent = content || Buffer.from('fake-image-content');
 
   const preamble = Buffer.from(
