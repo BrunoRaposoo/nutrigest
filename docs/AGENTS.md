@@ -65,10 +65,11 @@ pnpm lint                    # biome check (read-only)
 pnpm format                  # biome check --write (aplica correções)
 pnpm lint:ci                 # biome ci (modo estrito para CI)
 
-# Testes (Jest)
+# Testes (Jest) — usam banco nutrigest_test (isolado)
 pnpm --filter @nutrigest/api test          # Todos os testes
 pnpm --filter @nutrigest/api test:e2e      # Testes e2e
 pnpm --filter @nutrigest/api test:watch    # Watch mode
+pnpm --filter @nutrigest/api db:test:setup # Cria + migra nutrigest_test (1 vez)
 
 # Banco (Drizzle)
 pnpm --filter @nutrigest/api exec drizzle-kit generate   # Gera migração

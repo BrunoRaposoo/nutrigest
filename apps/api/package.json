@@ -17,7 +17,8 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "seed": "tsx src/db/seed-runner.ts"
+    "seed": "tsx src/db/seed-runner.ts",
+    "db:test:setup": "docker compose exec -T postgres psql -U nutrigest -c 'CREATE DATABASE nutrigest_test;' 2>/dev/null; DATABASE_URL=postgresql://nutrigest:nutrigest@localhost:5434/nutrigest_test drizzle-kit migrate"
   },
   "dependencies": {
     "@fastify/cors": "^11.0.1",
@@ -78,7 +79,7 @@
     "testEnvironment": "node",
     "testTimeout": 30000,
     "setupFiles": [
-      "dotenv/config"
+      "../test/setup.ts"
     ]
   }
 }
