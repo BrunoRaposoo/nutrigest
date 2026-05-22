@@ -281,6 +281,40 @@ describe('Products (e2e)', () => {
 
       expect(res.statusCode).toBe(403);
     });
+
+    it('should reject delete when stock > 0', async () => {
+      const { accessToken } = await registerAndLogin('ADMIN');
+
+      const createRes = await app.inject({
+        method: 'POST',
+        url: '/products',
+        headers: { authorization: `Bearer ${accessToken}` },
+        payload: { name: 'Stock Protect', category: 'BEVERAGE' },
+      });
+      const created = JSON.parse(createRes.body);
+
+      await app.inject({
+        method: 'PATCH',
+        url: `/central-stock/${created.id}`,
+        headers: { authorization: `Bearer ${accessToken}` },
+        payload: { quantity: 5 },
+      });
+
+      const res = await app.inject({
+        method: 'DELETE',
+        url: `/products/${created.id}`,
+        headers: { authorization: `Bearer ${accessToken}` },
+      });
+
+      expect(res.statusCode).toBe(400);
+
+      await app.inject({
+        method: 'PATCH',
+        url: `/central-stock/${created.id}`,
+        headers: { authorization: `Bearer ${accessToken}` },
+        payload: { quantity: 0 },
+      });
+    });
   });
 
   describe('/products/:id/image (POST) - upload image', () => {

@@ -14,7 +14,8 @@
 ### Etapa: Products ✅
 - [x] 2. Products CRUD
 - [x] 2.1 Product Images (optional upload)
-- [ ] 3. CentralStock
+- [x] 3. CentralStock (tabela + visualização + ajuste manual)
+- [ ] 4. MinibarStandard
 - [ ] 4. MinibarStandard
 - [ ] 5. StockMovement — IN (entrada mercadorias)
 - [ ] 6. StockMovement — REPLENISH (reposição frigobar)

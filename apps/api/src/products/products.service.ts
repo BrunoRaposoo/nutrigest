@@ -1,5 +1,11 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { eq } from 'drizzle-orm';
+import { CentralStockService } from '../central-stock/central-stock.service';
 import { DbService } from '../db/db.service';
 import { products } from '../db/schema';
 import {
@@ -14,6 +20,7 @@ export class ProductsService {
   constructor(
     private db: DbService,
     @Inject(STORAGE_SERVICE) private storage: StorageService,
+    private centralStockService: CentralStockService,
   ) {}
 
   async findAll() {
@@ -85,6 +92,13 @@ export class ProductsService {
 
     if (!product) {
       throw new NotFoundException('Product not found');
+    }
+
+    const stockQty = await this.centralStockService.getQuantity(id);
+    if (stockQty > 0) {
+      throw new BadRequestException(
+        'Cannot delete product with existing stock. Adjust stock first.',
+      );
     }
 
     if (product.imageUrl) {
