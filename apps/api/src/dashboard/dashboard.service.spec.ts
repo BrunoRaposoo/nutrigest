@@ -1,17 +1,15 @@
 import { Test, type TestingModule } from '@nestjs/testing';
-import { DashboardService } from './dashboard.service';
-import { ProductsService } from '../products/products.service';
 import { CentralStockService } from '../central-stock/central-stock.service';
-import { StockMovementsService } from '../stock-movements/stock-movements.service';
 import { DbService } from '../db/db.service';
+import { ProductsService } from '../products/products.service';
+import { StockMovementsService } from '../stock-movements/stock-movements.service';
 import { STORAGE_SERVICE } from '../storage/storage.service';
-import { NotFoundException } from '@nestjs/common';
+import { DashboardService } from './dashboard.service';
 
 describe('DashboardService', () => {
   let service: DashboardService;
   let productsService: ProductsService;
   let centralStockService: CentralStockService;
-  let stockMovementsService: StockMovementsService;
   let module: TestingModule;
 
   beforeAll(async () => {
@@ -22,14 +20,16 @@ describe('DashboardService', () => {
         CentralStockService,
         StockMovementsService,
         DbService,
-        { provide: STORAGE_SERVICE, useValue: { upload: jest.fn(), delete: jest.fn() } },
+        {
+          provide: STORAGE_SERVICE,
+          useValue: { upload: jest.fn(), delete: jest.fn() },
+        },
       ],
     }).compile();
 
     service = module.get<DashboardService>(DashboardService);
     productsService = module.get<ProductsService>(ProductsService);
     centralStockService = module.get<CentralStockService>(CentralStockService);
-    stockMovementsService = module.get<StockMovementsService>(StockMovementsService);
 
     const db = module.get<DbService>(DbService);
     await db.onModuleInit();

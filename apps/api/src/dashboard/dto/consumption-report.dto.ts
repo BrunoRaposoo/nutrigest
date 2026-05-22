@@ -6,6 +6,8 @@ export const ConsumptionReportSchema = z.object({
   to: z.string().datetime().optional(),
 });
 
-export class ConsumptionReportDto extends createZodDto(ConsumptionReportSchema) {}
+export class ConsumptionReportDto extends createZodDto(
+  ConsumptionReportSchema,
+) {}
 
 export type ConsumptionReportData = z.infer<typeof ConsumptionReportSchema>;

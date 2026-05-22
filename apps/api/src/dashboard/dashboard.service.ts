@@ -1,11 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { and, desc, eq, gte, lte, sql, sum } from 'drizzle-orm';
-import { CentralStockService } from '../central-stock/central-stock.service';
+import { and, desc, eq, gte, lte, sql } from 'drizzle-orm';
 import { DbService } from '../db/db.service';
 import { centralStock } from '../db/schema/central-stock';
 import { products } from '../db/schema/products';
 import { stockMovements } from '../db/schema/stock-movements';
-import { users } from '../db/schema/users';
 import { ProductsService } from '../products/products.service';
 import { StockMovementsService } from '../stock-movements/stock-movements.service';
 import type { ConsumptionReportData } from './dto/consumption-report.dto';
@@ -16,7 +14,6 @@ import type { StockHistoryData } from './dto/stock-history.dto';
 export class DashboardService {
   constructor(
     private productsService: ProductsService,
-    private centralStockService: CentralStockService,
     private stockMovementsService: StockMovementsService,
     private db: DbService,
   ) {}
@@ -26,7 +23,9 @@ export class DashboardService {
     const totalProducts = allProducts.length;
 
     const [stockSum] = await this.db.db
-      .select({ total: sql<number>`coalesce(sum(${centralStock.quantity}), 0)` })
+      .select({
+        total: sql<number>`coalesce(sum(${centralStock.quantity}), 0)`,
+      })
       .from(centralStock);
 
     const totalStockItems = Number(stockSum?.total ?? 0);
@@ -95,7 +94,10 @@ export class DashboardService {
       .groupBy(stockMovements.room, stockMovements.productId, products.name)
       .orderBy(stockMovements.room);
 
-    const grouped: Record<number, { room: number; items: Array<{ productName: string; quantity: number }> }> = {};
+    const grouped: Record<
+      number,
+      { room: number; items: Array<{ productName: string; quantity: number }> }
+    > = {};
 
     for (const row of rows) {
       if (row.room === null) continue;
