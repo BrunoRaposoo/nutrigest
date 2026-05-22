@@ -1,5 +1,7 @@
 import 'dotenv/config';
 
+import fastifyMultipart from '@fastify/multipart';
+import fastifyStatic from '@fastify/static';
 import { NestFactory } from '@nestjs/core';
 import {
   FastifyAdapter,
@@ -7,6 +9,7 @@ import {
 } from '@nestjs/platform-fastify';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ZodValidationPipe } from 'nestjs-zod';
+import { join } from 'node:path';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
@@ -19,6 +22,18 @@ async function bootstrap() {
   app.enableCors({
     origin: process.env.CORS_ORIGIN ?? 'http://localhost:5173',
     credentials: true,
+  });
+
+  app.register(fastifyStatic, {
+    root: join(__dirname, '..', process.env.UPLOAD_DIR || 'uploads'),
+    prefix: '/uploads/',
+    decorateReply: false,
+  });
+
+  app.register(fastifyMultipart, {
+    limits: {
+      fileSize: Number.parseInt(process.env.MAX_FILE_SIZE || '5242880', 10),
+    },
   });
 
   app.useGlobalPipes(new ZodValidationPipe());
