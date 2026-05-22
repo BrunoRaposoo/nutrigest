@@ -1,10 +1,8 @@
-import {
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import { DbService } from '../db/db.service';
-import { centralStock, products } from '../db/schema';
+import { centralStock } from '../db/schema/central-stock';
+import { products } from '../db/schema/products';
 import type { UpdateStockData } from './dto/update-stock.dto';
 
 @Injectable()
@@ -22,7 +20,8 @@ export class CentralStockService {
         updatedAt: centralStock.updatedAt,
       })
       .from(centralStock)
-      .innerJoin(products, eq(centralStock.productId, products.id))
+      // biome-ignore lint/suspicious/noExplicitAny: Drizzle type resolution workaround
+      .innerJoin(products as any, eq(centralStock.productId, products.id))
       .orderBy(products.name);
 
     return result;
@@ -49,12 +48,20 @@ export class CentralStockService {
         updatedAt: centralStock.updatedAt,
       })
       .from(centralStock)
-      .innerJoin(products, eq(centralStock.productId, products.id))
+      // biome-ignore lint/suspicious/noExplicitAny: Drizzle type resolution workaround
+      .innerJoin(products as any, eq(centralStock.productId, products.id))
       .where(eq(centralStock.productId, productId))
       .limit(1);
 
     if (!stock) {
-      throw new NotFoundException('Stock entry not found for this product');
+      return {
+        productId: existing.id,
+        productName: existing.name,
+        productCategory: existing.category,
+        productImageUrl: existing.imageUrl,
+        quantity: 0,
+        updatedAt: null,
+      };
     }
 
     return stock;

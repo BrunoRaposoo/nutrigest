@@ -75,14 +75,12 @@ async function main() {
     const allProducts = await db.select({ id: products.id }).from(products);
 
     if (allProducts.length > 0) {
-      await db
-        .insert(centralStock)
-        .values(
-          allProducts.map((p) => ({
-            productId: p.id,
-            quantity: 0,
-          })),
-        );
+      await db.insert(centralStock).values(
+        allProducts.map((p) => ({
+          productId: p.id,
+          quantity: 0,
+        })),
+      );
       console.log(`${allProducts.length} central stock entries seeded`);
     }
   }

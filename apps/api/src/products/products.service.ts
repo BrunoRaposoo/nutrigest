@@ -1,7 +1,3 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
-import { DbService } from '../db/db.service';
-import { products } from '../db/schema';
 import {
   BadRequestException,
   Inject,
