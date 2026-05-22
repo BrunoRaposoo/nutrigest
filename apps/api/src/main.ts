@@ -1,5 +1,8 @@
 import 'dotenv/config';
 
+import { join } from 'node:path';
+import fastifyMultipart from '@fastify/multipart';
+import fastifyStatic from '@fastify/static';
 import { NestFactory } from '@nestjs/core';
 import {
   FastifyAdapter,
@@ -19,6 +22,18 @@ async function bootstrap() {
   app.enableCors({
     origin: process.env.CORS_ORIGIN ?? 'http://localhost:5173',
     credentials: true,
+  });
+
+  app.register(fastifyStatic, {
+    root: join(__dirname, '..', process.env.UPLOAD_DIR || 'uploads'),
+    prefix: '/uploads/',
+    decorateReply: false,
+  });
+
+  app.register(fastifyMultipart, {
+    limits: {
+      fileSize: Number.parseInt(process.env.MAX_FILE_SIZE || '5242880', 10),
+    },
   });
 
   app.useGlobalPipes(new ZodValidationPipe());

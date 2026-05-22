@@ -118,6 +118,8 @@ docker compose down          # Para serviços
 | POST | `/products` | JWT | ADMIN, TECHNICIAN | Criar |
 | PATCH | `/products/:id` | JWT | ADMIN, TECHNICIAN | Atualizar |
 | DELETE | `/products/:id` | JWT | ADMIN | Remover |
+| POST | `/products/:id/image` | JWT | ADMIN, TECHNICIAN | Upload/substituir imagem |
+| DELETE | `/products/:id/image` | JWT | ADMIN, TECHNICIAN | Remover imagem |
 
 ### Users (`/users`) — admin only
 
