@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import { DbService } from '../db/db.service';
 import { centralStock } from '../db/schema/central-stock';
@@ -97,5 +97,55 @@ export class CentralStockService {
       .limit(1);
 
     return stock?.quantity ?? 0;
+  }
+
+  async increment(productId: string, amount: number) {
+    const [existing] = await this.db.db
+      .select()
+      .from(products)
+      .where(eq(products.id, productId))
+      .limit(1);
+
+    if (!existing) {
+      throw new NotFoundException('Product not found');
+    }
+
+    const currentQty = await this.getQuantity(productId);
+
+    await this.db.db
+      .insert(centralStock)
+      .values({ productId, quantity: currentQty + amount })
+      .onConflictDoUpdate({
+        target: centralStock.productId,
+        set: { quantity: currentQty + amount, updatedAt: new Date() },
+      });
+  }
+
+  async decrement(productId: string, amount: number) {
+    const [existing] = await this.db.db
+      .select()
+      .from(products)
+      .where(eq(products.id, productId))
+      .limit(1);
+
+    if (!existing) {
+      throw new NotFoundException('Product not found');
+    }
+
+    const currentQty = await this.getQuantity(productId);
+
+    if (currentQty < amount) {
+      throw new BadRequestException(
+        `Insufficient stock: available ${currentQty}, required ${amount}`,
+      );
+    }
+
+    await this.db.db
+      .insert(centralStock)
+      .values({ productId, quantity: currentQty - amount })
+      .onConflictDoUpdate({
+        target: centralStock.productId,
+        set: { quantity: currentQty - amount, updatedAt: new Date() },
+      });
   }
 }
