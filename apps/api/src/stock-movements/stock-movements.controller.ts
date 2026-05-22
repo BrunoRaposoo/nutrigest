@@ -1,4 +1,14 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post, Query, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseIntPipe,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -18,7 +28,10 @@ export class StockMovementsController {
 
   @Get()
   @Roles('ADMIN', 'TECHNICIAN', 'OPERATOR')
-  @ApiOperation({ summary: 'List stock movements with filters (type, room, date range, pagination)' })
+  @ApiOperation({
+    summary:
+      'List stock movements with filters (type, room, date range, pagination)',
+  })
   async findAll(@Query() dto: ListMovementsDto) {
     return this.stockMovementsService.findAll(dto);
   }
@@ -26,7 +39,11 @@ export class StockMovementsController {
   @Post('in')
   @Roles('ADMIN', 'TECHNICIAN')
   @ApiOperation({ summary: 'Register stock entry (batch)' })
-  async createIn(@Body() dto: CreateInMovementDto, @Req() req: any) {
+  async createIn(
+    @Body() dto: CreateInMovementDto,
+    // biome-ignore lint/suspicious/noExplicitAny: Express request type
+    @Req() req: any,
+  ) {
     return this.stockMovementsService.createIn(dto, req.user.id);
   }
 
@@ -36,6 +53,7 @@ export class StockMovementsController {
   async createReplenish(
     @Param('room', ParseIntPipe) room: number,
     @Body() dto: CreateReplenishMovementDto,
+    // biome-ignore lint/suspicious/noExplicitAny: Express request type
     @Req() req: any,
   ) {
     return this.stockMovementsService.createReplenish(room, dto, req.user.id);
@@ -44,7 +62,11 @@ export class StockMovementsController {
   @Post('meal-out')
   @Roles('ADMIN', 'TECHNICIAN', 'OPERATOR')
   @ApiOperation({ summary: 'Register meal removal' })
-  async createMealOut(@Body() dto: CreateMealOutMovementDto, @Req() req: any) {
+  async createMealOut(
+    @Body() dto: CreateMealOutMovementDto,
+    // biome-ignore lint/suspicious/noExplicitAny: Express request type
+    @Req() req: any,
+  ) {
     return this.stockMovementsService.createMealOut(dto, req.user.id);
   }
 }

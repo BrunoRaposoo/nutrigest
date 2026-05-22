@@ -12,7 +12,11 @@ export const CreateReplenishMovementSchema = z.object({
     .min(1),
 });
 
-export class CreateReplenishMovementDto extends createZodDto(CreateReplenishMovementSchema) {}
+export class CreateReplenishMovementDto extends createZodDto(
+  CreateReplenishMovementSchema,
+) {}
 
-export type CreateReplenishMovementData = z.infer<typeof CreateReplenishMovementSchema>;
+export type CreateReplenishMovementData = z.infer<
+  typeof CreateReplenishMovementSchema
+>;
 export type ReplenishItem = CreateReplenishMovementData['items'][number];

@@ -1,6 +1,5 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
-import { eq } from 'drizzle-orm';
 import { CentralStockService } from '../central-stock/central-stock.service';
 import { DbService } from '../db/db.service';
 import { products } from '../db/schema/products';
@@ -36,10 +35,7 @@ describe('StockMovementsService', () => {
   }
 
   async function getAnyUserId() {
-    const [user] = await db.db
-      .select({ id: users.id })
-      .from(users)
-      .limit(1);
+    const [user] = await db.db.select({ id: users.id }).from(users).limit(1);
     return user?.id;
   }
 

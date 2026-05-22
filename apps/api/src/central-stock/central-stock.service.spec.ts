@@ -145,9 +145,9 @@ describe('CentralStockService', () => {
       if (all.length === 0) return;
 
       await service.update(all[0].productId, { quantity: 5 });
-      await expect(
-        service.decrement(all[0].productId, 10),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.decrement(all[0].productId, 10)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw NotFoundException for non-existent product', async () => {

@@ -127,6 +127,15 @@ docker compose down          # Para serviços
 | PATCH | `/minibar-standard/:room/:productId` | JWT | ADMIN, TECHNICIAN | Atualizar quantidade padrão |
 | DELETE | `/minibar-standard/:room/:productId` | JWT | ADMIN, TECHNICIAN | Remover item (204) |
 
+### Stock Movements (`/stock-movements`)
+
+| Método | Rota | Auth | Roles | Descrição |
+|--------|------|------|-------|-----------|
+| GET | `/stock-movements` | JWT | ADMIN, TECHNICIAN, OPERATOR | Listar movimentações (filtros: type, room, data, paginação) |
+| POST | `/stock-movements/in` | JWT | ADMIN, TECHNICIAN | Registrar entrada de mercadorias (batch) |
+| POST | `/stock-movements/replenish/:room` | JWT | ADMIN, TECHNICIAN, OPERATOR | Reposição de frigobar |
+| POST | `/stock-movements/meal-out` | JWT | ADMIN, TECHNICIAN, OPERATOR | Retirada de marmita |
+
 ### Products (`/products`)
 
 | Método | Rota | Auth | Roles | Descrição |

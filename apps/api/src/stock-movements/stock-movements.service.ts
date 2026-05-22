@@ -1,14 +1,18 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { and, desc, eq, gte, lte, sql } from 'drizzle-orm';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { and, desc, eq, gte, lte } from 'drizzle-orm';
 import { CentralStockService } from '../central-stock/central-stock.service';
 import { DbService } from '../db/db.service';
 import { centralStock } from '../db/schema/central-stock';
 import { products } from '../db/schema/products';
 import { stockMovements } from '../db/schema/stock-movements';
 import { users } from '../db/schema/users';
-import type { CreateInMovementData, InMovementItem } from './dto/create-in-movement.dto';
+import type { CreateInMovementData } from './dto/create-in-movement.dto';
 import type { CreateMealOutMovementData } from './dto/create-meal-out-movement.dto';
-import type { CreateReplenishMovementData, ReplenishItem } from './dto/create-replenish-movement.dto';
+import type { CreateReplenishMovementData } from './dto/create-replenish-movement.dto';
 import type { ListMovementsData } from './dto/list-movements.dto';
 
 const VALID_ROOMS = Array.from({ length: 10 }, (_, i) => 101 + i);
@@ -51,7 +55,11 @@ export class StockMovementsService {
     return created;
   }
 
-  async createReplenish(room: number, dto: CreateReplenishMovementData, userId: string) {
+  async createReplenish(
+    room: number,
+    dto: CreateReplenishMovementData,
+    userId: string,
+  ) {
     if (!VALID_ROOMS.includes(room)) {
       throw new NotFoundException('Room not found');
     }
@@ -81,7 +89,11 @@ export class StockMovementsService {
           })
           .returning();
 
-        await this.upsertCentralStock(tx, item.productId, -item.consumedQuantity);
+        await this.upsertCentralStock(
+          tx,
+          item.productId,
+          -item.consumedQuantity,
+        );
 
         records.push(movement);
       }
@@ -181,11 +193,8 @@ export class StockMovementsService {
     }
   }
 
-  private async upsertCentralStock(
-    tx: any,
-    productId: string,
-    delta: number,
-  ) {
+  // biome-ignore lint/suspicious/noExplicitAny: Drizzle transaction type
+  private async upsertCentralStock(tx: any, productId: string, delta: number) {
     const [current] = await tx
       .select({ quantity: centralStock.quantity })
       .from(centralStock)

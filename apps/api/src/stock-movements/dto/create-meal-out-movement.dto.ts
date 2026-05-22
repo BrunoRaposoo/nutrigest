@@ -6,6 +6,10 @@ export const CreateMealOutMovementSchema = z.object({
   quantity: z.number().int().min(1),
 });
 
-export class CreateMealOutMovementDto extends createZodDto(CreateMealOutMovementSchema) {}
+export class CreateMealOutMovementDto extends createZodDto(
+  CreateMealOutMovementSchema,
+) {}
 
-export type CreateMealOutMovementData = z.infer<typeof CreateMealOutMovementSchema>;
+export type CreateMealOutMovementData = z.infer<
+  typeof CreateMealOutMovementSchema
+>;
