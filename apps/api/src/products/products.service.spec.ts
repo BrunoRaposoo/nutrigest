@@ -1,6 +1,8 @@
 import { NotFoundException } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { DbService } from '../db/db.service';
+import { LocalStorageService } from '../storage/local-storage.service';
+import { STORAGE_SERVICE } from '../storage/storage.service';
 import { ProductsService } from './products.service';
 
 describe('ProductsService', () => {
@@ -9,7 +11,14 @@ describe('ProductsService', () => {
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [ProductsService, DbService],
+      providers: [
+        ProductsService,
+        DbService,
+        {
+          provide: STORAGE_SERVICE,
+          useClass: LocalStorageService,
+        },
+      ],
     }).compile();
 
     service = module.get<ProductsService>(ProductsService);
@@ -123,6 +132,94 @@ describe('ProductsService', () => {
     it('should throw NotFoundException for invalid id', async () => {
       await expect(
         service.remove('00000000-0000-0000-0000-000000000000'),
+      ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('uploadImage', () => {
+    it('should upload image to a product', async () => {
+      const created = await service.create({
+        name: 'Image Test',
+        category: 'BEVERAGE',
+      });
+
+      const result = await service.uploadImage(
+        created.id,
+        Buffer.from('fake-image-content'),
+        'test.png',
+        'image/png',
+      );
+
+      expect(result.imageUrl).toBeTruthy();
+      expect(result.imageUrl).toMatch(/^\/uploads\//);
+    });
+
+    it('should replace existing image', async () => {
+      const created = await service.create({
+        name: 'Replace Image',
+        category: 'MEAL',
+      });
+
+      const first = await service.uploadImage(
+        created.id,
+        Buffer.from('first'),
+        'first.png',
+        'image/png',
+      );
+
+      const second = await service.uploadImage(
+        created.id,
+        Buffer.from('second'),
+        'second.png',
+        'image/png',
+      );
+
+      expect(second.imageUrl).not.toBe(first.imageUrl);
+    });
+
+    it('should throw NotFoundException for invalid product', async () => {
+      await expect(
+        service.uploadImage(
+          '00000000-0000-0000-0000-000000000000',
+          Buffer.from('test'),
+          'test.png',
+          'image/png',
+        ),
+      ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('deleteImage', () => {
+    it('should remove image from product', async () => {
+      const created = await service.create({
+        name: 'Delete Image Test',
+        category: 'BEVERAGE',
+      });
+
+      await service.uploadImage(
+        created.id,
+        Buffer.from('test'),
+        'test.png',
+        'image/png',
+      );
+
+      const result = await service.deleteImage(created.id);
+      expect(result.imageUrl).toBeNull();
+    });
+
+    it('should be idempotent when product has no image', async () => {
+      const created = await service.create({
+        name: 'No Image',
+        category: 'MEAL',
+      });
+
+      const result = await service.deleteImage(created.id);
+      expect(result.imageUrl).toBeNull();
+    });
+
+    it('should throw NotFoundException for invalid product', async () => {
+      await expect(
+        service.deleteImage('00000000-0000-0000-0000-000000000000'),
       ).rejects.toThrow(NotFoundException);
     });
   });
