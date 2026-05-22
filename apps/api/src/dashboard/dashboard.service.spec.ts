@@ -84,7 +84,7 @@ describe('DashboardService', () => {
 
   describe('getMealRanking', () => {
     it('should return array sorted by totalQuantity descending', async () => {
-      const result = await service.getMealRanking({});
+      const result = await service.getMealRanking({ limit: 10 });
       expect(Array.isArray(result)).toBe(true);
       for (let i = 1; i < result.length; i++) {
         expect(result[i - 1].totalQuantity).toBeGreaterThanOrEqual(
