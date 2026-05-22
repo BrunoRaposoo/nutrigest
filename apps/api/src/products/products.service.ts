@@ -1,13 +1,17 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import { DbService } from '../db/db.service';
 import { products } from '../db/schema';
+import { STORAGE_SERVICE, type StorageService } from '../storage/storage.service';
 import type { CreateProductData } from './dto/create-product.dto';
 import type { UpdateProductData } from './dto/update-product.dto';
 
 @Injectable()
 export class ProductsService {
-  constructor(private db: DbService) {}
+  constructor(
+    private db: DbService,
+    @Inject(STORAGE_SERVICE) private storage: StorageService,
+  ) {}
 
   async findAll() {
     return this.db.db.select().from(products);
@@ -80,8 +84,67 @@ export class ProductsService {
       throw new NotFoundException('Product not found');
     }
 
+    if (product.imageUrl) {
+      await this.storage.delete(product.imageUrl);
+    }
+
     await this.db.db.delete(products).where(eq(products.id, id));
 
     return { message: 'Product deleted successfully' };
+  }
+
+  async uploadImage(
+    id: string,
+    fileBuffer: Buffer,
+    fileName: string,
+    mimeType: string,
+  ) {
+    const [product] = await this.db.db
+      .select()
+      .from(products)
+      .where(eq(products.id, id))
+      .limit(1);
+
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+
+    if (product.imageUrl) {
+      await this.storage.delete(product.imageUrl);
+    }
+
+    const imageUrl = await this.storage.upload(fileBuffer, fileName, mimeType);
+
+    const [updated] = await this.db.db
+      .update(products)
+      .set({ imageUrl, updatedAt: new Date() })
+      .where(eq(products.id, id))
+      .returning();
+
+    return updated;
+  }
+
+  async deleteImage(id: string) {
+    const [product] = await this.db.db
+      .select()
+      .from(products)
+      .where(eq(products.id, id))
+      .limit(1);
+
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+
+    if (product.imageUrl) {
+      await this.storage.delete(product.imageUrl);
+    }
+
+    const [updated] = await this.db.db
+      .update(products)
+      .set({ imageUrl: null, updatedAt: new Date() })
+      .where(eq(products.id, id))
+      .returning();
+
+    return updated;
   }
 }
