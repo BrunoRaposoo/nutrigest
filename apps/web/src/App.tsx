@@ -1,5 +1,14 @@
-function App() {
-  return <h1>Gestão em nutrição</h1>;
-}
+import { RouterProvider } from 'react-router-dom';
+import { AuthProvider } from './contexts/auth-context';
+import { ThemeProvider } from './contexts/theme-context';
+import { router } from './routes';
 
-export default App;
+export default function App() {
+  return (
+    <ThemeProvider>
+      <AuthProvider>
+        <RouterProvider router={router} />
+      </AuthProvider>
+    </ThemeProvider>
+  );
+}
