@@ -10,7 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from '../../components/ui/card';
-import { Input } from '../../components/ui/input';
+import { PasswordInput } from '../../components/ui/password-input';
 import { api } from '../../lib/api';
 
 const resetSchema = z
@@ -77,17 +77,15 @@ export default function ResetPassword() {
               {error}
             </div>
           )}
-          <Input
+          <PasswordInput
             id="password"
-            type="password"
             label="Nova senha"
             placeholder="Mínimo 6 caracteres"
             error={errors.password?.message}
             {...register('password')}
           />
-          <Input
+          <PasswordInput
             id="confirmPassword"
-            type="password"
             label="Confirmar senha"
             placeholder="Repita a senha"
             error={errors.confirmPassword?.message}
