@@ -21,6 +21,11 @@ api.interceptors.response.use(
       localStorage.removeItem('refreshToken');
       window.location.href = '/login';
     }
+    if (!error.response) {
+      return Promise.reject(
+        new Error('Servidor indisponível. Verifique sua conexão.'),
+      );
+    }
     return Promise.reject(error);
   },
 );
