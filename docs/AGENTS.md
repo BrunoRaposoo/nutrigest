@@ -44,6 +44,16 @@ nutrigest/
 5. Após merge em `dev` pelo usuário, continuar próximo desenvolvimento
 6. `dev` → `main` apenas quando a fase estiver completa e testada
 
+### Fluxo atual (Frontend fase 2)
+Nesta fase, o agente (opencode) segue este fluxo:
+1. **Agente desenvolve e commita** na branch atual (`feat/frontend-foundation`)
+2. **Usuário faz push manualmente** para o remoto
+3. **Usuário abre PR manualmente** no GitHub (`feat/frontend-foundation` → `dev`)
+4. **Usuário faz merge em `dev` manualmente**
+5. Após merge, agente continua com próxima funcionalidade
+
+> O agente NUNCA faz push, NUNCA abre PR, e NUNCA mergeia. Essas ações são exclusivas do usuário.
+
 ### Commits
 - Usar commits convencionais: `feat:`, `fix:`, `test:`, `docs:`, `refactor:`
 - Um commit por sub-feature (ex: `feat: add user registration with auth module`)

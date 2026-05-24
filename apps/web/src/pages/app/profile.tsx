@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
+import { PasswordInput } from '../../components/ui/password-input';
 import { useAuth } from '../../contexts/auth-context';
 import { api } from '../../lib/api';
 
@@ -127,24 +128,23 @@ export default function Profile() {
                 {passwordMsg}
               </div>
             )}
-            <Input
+            <PasswordInput
               id="currentPassword"
-              type="password"
               label="Senha atual"
               error={passwordForm.formState.errors.currentPassword?.message}
               {...passwordForm.register('currentPassword')}
             />
-            <Input
+            <PasswordInput
               id="newPassword"
-              type="password"
               label="Nova senha"
+              placeholder="Mínimo 6 caracteres"
               error={passwordForm.formState.errors.newPassword?.message}
               {...passwordForm.register('newPassword')}
             />
-            <Input
+            <PasswordInput
               id="confirmPassword"
-              type="password"
               label="Confirmar senha"
+              placeholder="Repita a senha"
               error={passwordForm.formState.errors.confirmPassword?.message}
               {...passwordForm.register('confirmPassword')}
             />

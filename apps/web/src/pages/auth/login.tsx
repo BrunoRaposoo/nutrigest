@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
+import { PasswordInput } from '../../components/ui/password-input';
 import { useAuth } from '../../contexts/auth-context';
 
 const loginSchema = z.object({
@@ -78,9 +79,8 @@ export default function Login() {
             error={errors.email?.message}
             {...register('email')}
           />
-          <Input
+          <PasswordInput
             id="password"
-            type="password"
             label="Senha"
             placeholder="Sua senha"
             error={errors.password?.message}
