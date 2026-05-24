@@ -13,7 +13,26 @@
 - [x] 7. Dashboard Charts (monthly consumption, room comparison, category distribution, stock evolution)
 - [x] 8. CSV Export
 
-## Fase 2: Frontend (Web) — Em breve
+## Fase 2: Frontend (Web) — Em andamento 🏗️
+
+- [ ] 1. Project setup, design system, types, utilities
+- [ ] 2. API client and React Query setup
+- [ ] 3. Theme context and UI primitives
+- [ ] 4. Auth context and routing
+- [ ] 5. Layout components (Public, Auth, App)
+- [ ] 6. Landing page (animated)
+- [ ] 7. Register page
+- [ ] 8. Login page
+- [ ] 9. Forgot/Reset password pages
+- [ ] 10. Dashboard page (summary + charts)
+- [ ] 11. Products page (CRUD)
+- [ ] 12. Central Stock page
+- [ ] 13. Minibar Standard page
+- [ ] 14. Stock Movements page
+- [ ] 15. Profile page
+- [ ] 16. Users page (admin)
+- [ ] 17. NotFound page + build verification
+- [ ] 18. Light/Dark mode polish
 
 ## Fase 3: Melhorias Futuras
 - [ ] Audit Logs
