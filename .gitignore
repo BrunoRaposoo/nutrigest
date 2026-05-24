@@ -5,6 +5,12 @@ dist
 *.log
 .DS_Store
 
+# Uploads
+uploads/*
+!uploads/.gitkeep
+apps/api/uploads/*
+!apps/api/uploads/.gitkeep
+
 # Drizzle
 drizzle/meta
 drizzle/snapshots
