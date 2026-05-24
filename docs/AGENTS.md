@@ -94,6 +94,13 @@ docker compose down          # Para serviços
 - **Spec-driven:** Toda feature documentada em `docs/superpowers/`
 - **Swagger:** Toda rota documentada com decorators OpenAPI
 
+### Frontend (Web)
+
+- **Mobile-first:** Todo layout deve ser responsivo e priorizar telas pequenas (celulares/tablets). O app será usado primariamente em dispositivos móveis.
+- **Testes:** Vitest + Testing Library para testes unitários de componentes e páginas. Testes de API cobertos pelo backend (Jest).
+- **Componentes:** Primitivos próprios (shadcn/ui style) com Tailwind. Sem bibliotecas de UI prontas.
+- **Gráficos:** SVG puro (BarChart customizado). Sem recharts ou chart.js.
+
 ## Endpoints Atuais
 
 ### Auth (`/auth`)

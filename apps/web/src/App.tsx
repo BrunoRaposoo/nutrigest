@@ -1,5 +1,3 @@
-import './App.css';
-
 function App() {
   return <h1>Gestão em nutrição</h1>;
 }
