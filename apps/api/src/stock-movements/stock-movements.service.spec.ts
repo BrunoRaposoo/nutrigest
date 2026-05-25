@@ -155,7 +155,6 @@ describe('StockMovementsService', () => {
         ),
       ).rejects.toThrow(BadRequestException);
     });
-  });
 
     it('should create only CONSUMPTION when restockedQuantity is 0', async () => {
       const productId = await getAnyProductId();
@@ -192,6 +191,7 @@ describe('StockMovementsService', () => {
       expect(result[0].type).toBe('REPLENISH');
       expect(result[0].quantity).toBe(4);
     });
+  });
 
   describe('createMealOut', () => {
     it('should create MEAL_OUT movement and decrement stock', async () => {
@@ -220,7 +220,7 @@ describe('StockMovementsService', () => {
       await centralStock.update(productId, { quantity: 1 });
 
       await expect(
-        service.createMealOut({ productId, quantity: 5 }, userId),
+        service.createMealOut({ productId, quantity: 5, description: 'test' }, userId),
       ).rejects.toThrow(BadRequestException);
     });
 
