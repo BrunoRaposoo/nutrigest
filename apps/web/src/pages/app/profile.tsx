@@ -72,7 +72,7 @@ export default function Profile() {
   };
 
   return (
-    <div className="max-w-xl mx-auto space-y-6">
+    <div className="max-w-xl mx-auto space-y-6 transition-theme">
       <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
         Perfil
       </h1>

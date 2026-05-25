@@ -167,7 +167,7 @@ export default function StockMovements() {
     .slice(0, 5);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 transition-theme">
       <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
         Movimentações
       </h1>
