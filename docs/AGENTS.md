@@ -148,10 +148,10 @@ docker compose down          # Para serviços
 
 | Método | Rota | Auth | Roles | Descrição |
 |--------|------|------|-------|-----------|
-| GET | `/stock-movements` | JWT | ADMIN, TECHNICIAN, OPERATOR | Listar movimentações (filtros: type, room, data, paginação) |
+| GET | `/stock-movements` | JWT | ADMIN, TECHNICIAN, OPERATOR | Listar movimentações (filtros: type, room, data, paginação). Tipos: IN, CONSUMPTION, REPLENISH, MEAL_OUT |
 | POST | `/stock-movements/in` | JWT | ADMIN, TECHNICIAN | Registrar entrada de mercadorias (batch) |
-| POST | `/stock-movements/replenish/:room` | JWT | ADMIN, TECHNICIAN, OPERATOR | Reposição de frigobar |
-| POST | `/stock-movements/meal-out` | JWT | ADMIN, TECHNICIAN, OPERATOR | Retirada de marmita |
+| POST | `/stock-movements/replenish/:room` | JWT | ADMIN, TECHNICIAN, OPERATOR | Reposição de frigobar (cria CONSUMPTION + REPLENISH) |
+| POST | `/stock-movements/meal-out` | JWT | ADMIN, TECHNICIAN, OPERATOR | Retirada de marmita (description obrigatório) |
 
 ### Products (`/products`)
 

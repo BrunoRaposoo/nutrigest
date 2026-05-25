@@ -111,15 +111,18 @@ describe('StockMovementsService', () => {
 
       const result = await service.createReplenish(
         105,
-        { items: [{ productId, consumedQuantity: 5 }] },
+        { items: [{ productId, consumedQuantity: 5, restockedQuantity: 5 }] },
         userId,
       );
 
       expect(Array.isArray(result)).toBe(true);
-      expect(result.length).toBe(1);
-      expect(result[0].type).toBe('REPLENISH');
-      expect(result[0].room).toBe(105);
+      expect(result.length).toBe(2);
+      expect(result[0].type).toBe('CONSUMPTION');
       expect(result[0].quantity).toBe(5);
+      expect(result[0].room).toBe(105);
+      expect(result[1].type).toBe('REPLENISH');
+      expect(result[1].quantity).toBe(5);
+      expect(result[1].room).toBe(105);
     });
 
     it('should throw NotFoundException for invalid room', async () => {
@@ -130,7 +133,7 @@ describe('StockMovementsService', () => {
       await expect(
         service.createReplenish(
           999,
-          { items: [{ productId, consumedQuantity: 1 }] },
+          { items: [{ productId, consumedQuantity: 1, restockedQuantity: 0 }] },
           userId,
         ),
       ).rejects.toThrow(NotFoundException);
@@ -147,10 +150,48 @@ describe('StockMovementsService', () => {
       await expect(
         service.createReplenish(
           101,
-          { items: [{ productId, consumedQuantity: 10 }] },
+          {
+            items: [{ productId, consumedQuantity: 0, restockedQuantity: 10 }],
+          },
           userId,
         ),
       ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should create only CONSUMPTION when restockedQuantity is 0', async () => {
+      const productId = await getAnyProductId();
+      const userId = await getAnyUserId();
+      if (!productId || !userId) return;
+
+      await centralStock.increment(productId, 20);
+
+      const result = await service.createReplenish(
+        101,
+        { items: [{ productId, consumedQuantity: 3, restockedQuantity: 0 }] },
+        userId,
+      );
+
+      expect(result.length).toBe(1);
+      expect(result[0].type).toBe('CONSUMPTION');
+      expect(result[0].quantity).toBe(3);
+    });
+
+    it('should create only REPLENISH when consumedQuantity is 0', async () => {
+      const productId = await getAnyProductId();
+      const userId = await getAnyUserId();
+      if (!productId || !userId) return;
+
+      await centralStock.increment(productId, 20);
+
+      const result = await service.createReplenish(
+        101,
+        { items: [{ productId, consumedQuantity: 0, restockedQuantity: 4 }] },
+        userId,
+      );
+
+      expect(result.length).toBe(1);
+      expect(result[0].type).toBe('REPLENISH');
+      expect(result[0].quantity).toBe(4);
     });
   });
 
@@ -164,12 +205,13 @@ describe('StockMovementsService', () => {
       await centralStock.increment(productId, 30);
 
       const result = await service.createMealOut(
-        { productId, quantity: 3 },
+        { productId, quantity: 3, description: 'Funcionário João' },
         userId,
       );
 
       expect(result.type).toBe('MEAL_OUT');
       expect(result.quantity).toBe(3);
+      expect(result.description).toBe('Funcionário João');
     });
 
     it('should throw BadRequestException if insufficient stock', async () => {
@@ -180,7 +222,10 @@ describe('StockMovementsService', () => {
       await centralStock.update(productId, { quantity: 1 });
 
       await expect(
-        service.createMealOut({ productId, quantity: 5 }, userId),
+        service.createMealOut(
+          { productId, quantity: 5, description: 'test' },
+          userId,
+        ),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -193,6 +238,7 @@ describe('StockMovementsService', () => {
           {
             productId: '00000000-0000-0000-0000-000000000000',
             quantity: 1,
+            description: 'test',
           },
           userId,
         ),
