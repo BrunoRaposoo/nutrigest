@@ -29,7 +29,11 @@ export function useCreateReplenish() {
   return useMutation({
     mutationFn: (data: {
       room: number;
-      items: Array<{ productId: string; quantity: number }>;
+      items: Array<{
+        productId: string;
+        consumedQuantity: number;
+        restockedQuantity: number;
+      }>;
     }) =>
       api.post(`/stock-movements/replenish/${data.room}`, {
         items: data.items,
@@ -44,8 +48,11 @@ export function useCreateReplenish() {
 export function useCreateMealOut() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: { productId: string; quantity: number }) =>
-      api.post('/stock-movements/meal-out', data),
+    mutationFn: (data: {
+      productId: string;
+      quantity: number;
+      description: string;
+    }) => api.post('/stock-movements/meal-out', data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['stock-movements'] });
       qc.invalidateQueries({ queryKey: ['central-stock'] });

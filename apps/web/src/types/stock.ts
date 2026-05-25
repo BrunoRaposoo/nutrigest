@@ -1,4 +1,4 @@
-export type MovementType = 'IN' | 'REPLENISH' | 'MEAL_OUT';
+export type MovementType = 'IN' | 'CONSUMPTION' | 'REPLENISH' | 'MEAL_OUT';
 
 export interface CentralStockItem {
   productId: string;
@@ -39,4 +39,11 @@ export interface MovementFilters {
   to?: string;
   page?: number;
   limit?: number;
+}
+
+export interface ReplenishItem {
+  productId: string;
+  productName: string;
+  consumedQuantity: number;
+  restockedQuantity: number;
 }
