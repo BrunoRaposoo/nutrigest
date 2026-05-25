@@ -31,12 +31,15 @@ export default function MinibarStandard() {
   const createMutation = useMutation({
     mutationFn: ({
       productId,
-      quantity,
+      standardQuantity,
     }: {
       productId: string;
-      quantity: number;
+      standardQuantity: number;
     }) =>
-      api.post(`/minibar-standard/${selectedRoom}`, { productId, quantity }),
+      api.post(`/minibar-standard/${selectedRoom}`, {
+        productId,
+        standardQuantity,
+      }),
     onSuccess: () =>
       qc.invalidateQueries({ queryKey: ['minibar-standard', selectedRoom] }),
   });
