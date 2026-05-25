@@ -51,21 +51,35 @@ export default function MinibarStandard() {
   const [addOpen, setAddOpen] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState('');
   const [addQty, setAddQty] = useState(1);
+  const [error, setError] = useState('');
 
   const handleAdd = async () => {
     if (!selectedProductId) return;
-    await createMutation.mutateAsync({
-      productId: selectedProductId,
-      quantity: addQty,
-    });
-    setAddOpen(false);
-    setSelectedProductId('');
-    setAddQty(1);
+    setError('');
+    try {
+      await createMutation.mutateAsync({
+        productId: selectedProductId,
+        standardQuantity: addQty,
+      });
+      setAddOpen(false);
+      setSelectedProductId('');
+      setAddQty(1);
+    } catch (err: unknown) {
+      const msg =
+        err && typeof err === 'object' && 'response' in err
+          ? ((err as { response: { data: { message: string } } }).response?.data
+              ?.message ?? 'Erro ao adicionar item')
+          : 'Erro ao adicionar item';
+      setError(msg);
+    }
   };
 
   const handleDelete = async (productId: string) => {
-    if (window.confirm('Remover item do padrão?')) {
+    if (!window.confirm('Remover item do padrão?')) return;
+    try {
       await deleteMutation.mutateAsync(productId);
+    } catch {
+      alert('Erro ao remover item');
     }
   };
 
@@ -168,6 +182,11 @@ export default function MinibarStandard() {
 
       <Dialog open={addOpen} onOpenChange={setAddOpen} title="Adicionar Item">
         <div className="space-y-4">
+          {error && (
+            <div className="rounded-lg bg-red-50 dark:bg-red-900/20 p-3 text-sm text-red-600 dark:text-red-400">
+              {error}
+            </div>
+          )}
           <div>
             <label
               htmlFor="minibar-product"
