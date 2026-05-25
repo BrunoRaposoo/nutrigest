@@ -5,7 +5,7 @@ function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={cn(
-        'rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-navy-800',
+        'rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-navy-800 transition-theme',
         className,
       )}
       {...props}
@@ -24,7 +24,7 @@ function CardTitle({
   return (
     <h3
       className={cn(
-        'text-lg font-semibold text-gray-900 dark:text-gray-100',
+        'text-lg font-semibold text-gray-900 dark:text-gray-100 transition-theme',
         className,
       )}
       {...props}

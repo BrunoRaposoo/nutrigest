@@ -32,7 +32,7 @@ export default function MovementCard({ movement }: MovementCardProps) {
   const cfg = typeConfig[movement.type];
 
   return (
-    <div className="p-4 bg-white dark:bg-navy-800 rounded-xl border border-gray-200 dark:border-gray-700">
+    <div className="p-4 bg-white dark:bg-navy-800 rounded-xl border border-gray-200 dark:border-gray-700 transition-theme">
       <div className="flex items-start justify-between mb-2">
         <div className="flex items-center gap-2">
           <span

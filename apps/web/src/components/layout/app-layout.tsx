@@ -74,7 +74,7 @@ export function AppLayout() {
   );
 
   return (
-    <div className="min-h-screen bg-surface-secondary dark:bg-surface-dark flex">
+    <div className="min-h-screen bg-surface-secondary dark:bg-surface-dark flex transition-theme">
       {sidebarOpen && (
         <>
           {/* biome-ignore lint/a11y/noStaticElementInteractions: mobile overlay backdrop */}
@@ -88,7 +88,7 @@ export function AppLayout() {
 
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 w-64 bg-white dark:bg-navy-800 border-r border-gray-200 dark:border-gray-800 transform transition-transform lg:translate-x-0 lg:static lg:z-auto',
+          'fixed inset-y-0 left-0 z-40 w-64 bg-white dark:bg-navy-800 border-r border-gray-200 dark:border-gray-800 transform transition-[transform,background-color,border-color,color] duration-300 lg:translate-x-0 lg:static lg:z-auto',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full',
         )}
       >
@@ -132,7 +132,7 @@ export function AppLayout() {
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-16 bg-white dark:bg-navy-800 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-4 lg:px-6">
+        <header className="h-16 bg-white dark:bg-navy-800 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-4 lg:px-6 transition-theme">
           <button
             type="button"
             onClick={() => setSidebarOpen(true)}

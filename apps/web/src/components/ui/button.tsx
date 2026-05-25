@@ -21,7 +21,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     ref,
   ) => {
     const base =
-      'inline-flex items-center justify-center rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-gold-500/50 disabled:opacity-50 disabled:pointer-events-none';
+      'inline-flex items-center justify-center rounded-lg font-medium transition-theme focus:outline-none focus:ring-2 focus:ring-gold-500/50 disabled:opacity-50 disabled:pointer-events-none';
     const variants: Record<string, string> = {
       primary:
         'bg-navy-700 text-white hover:bg-navy-600 dark:bg-gold-500 dark:text-navy-900 dark:hover:bg-gold-400',

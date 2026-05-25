@@ -22,7 +22,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           ref={ref}
           id={id}
           className={cn(
-            'flex h-10 w-full rounded-lg border bg-white px-3 py-2 text-sm placeholder:text-gray-400',
+            'flex h-10 w-full rounded-lg border bg-white px-3 py-2 text-sm placeholder:text-gray-400 transition-theme',
             'focus:outline-none focus:ring-2 focus:ring-gold-500/50 focus:border-gold-500',
             'dark:bg-navy-800 dark:text-gray-100 dark:border-gray-700',
             error

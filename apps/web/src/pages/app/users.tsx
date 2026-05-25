@@ -107,7 +107,7 @@ export default function Users() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 transition-theme">
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
           Usuários

@@ -27,7 +27,7 @@ const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
             id={id}
             type={show ? 'text' : 'password'}
             className={cn(
-              'flex h-10 w-full rounded-lg border bg-white px-3 py-2 pr-10 text-sm placeholder:text-gray-400',
+              'flex h-10 w-full rounded-lg border bg-white px-3 py-2 pr-10 text-sm placeholder:text-gray-400 transition-theme',
               'focus:outline-none focus:ring-2 focus:ring-gold-500/50 focus:border-gold-500',
               'dark:bg-navy-800 dark:text-gray-100 dark:border-gray-700',
               error

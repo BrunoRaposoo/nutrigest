@@ -13,7 +13,7 @@
 - [x] 7. Dashboard Charts (monthly consumption, room comparison, category distribution, stock evolution)
 - [x] 8. CSV Export
 
-## Fase 2: Frontend (Web) — Em andamento 🏗️
+## Fase 2: Frontend (Web) ✅
 
 - [x] 1. Project setup, design system, types, utilities
 - [x] 2. API client and React Query setup
@@ -32,7 +32,7 @@
 - [x] 15. Profile page
 - [x] 16. Users page (admin)
 - [x] 17. NotFound page + build verification
-- [ ] 18. Light/Dark mode polish
+- [x] 18. Light/Dark mode polish
 
 ## Fase 3: Melhorias Futuras
 - [ ] Audit Logs
