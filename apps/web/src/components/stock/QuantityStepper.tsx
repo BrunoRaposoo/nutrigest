@@ -1,9 +1,12 @@
+import { cn } from '../../lib/utils';
+
 interface QuantityStepperProps {
   value: number;
   onChange: (value: number) => void;
   min?: number;
   max?: number;
   label?: string;
+  labelClassName?: string;
 }
 
 export default function QuantityStepper({
@@ -12,11 +15,17 @@ export default function QuantityStepper({
   min = 0,
   max = 99,
   label,
+  labelClassName,
 }: QuantityStepperProps) {
   return (
     <div className="flex items-center gap-3">
       {label && (
-        <span className="text-sm text-gray-600 dark:text-gray-400 min-w-20">
+        <span
+          className={cn(
+            'text-sm min-w-20',
+            labelClassName || 'text-gray-600 dark:text-gray-400',
+          )}
+        >
           {label}
         </span>
       )}

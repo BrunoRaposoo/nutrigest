@@ -414,6 +414,7 @@ export default function StockMovements() {
                       <div className="flex flex-col gap-2">
                         <QuantityStepper
                           label="Consumido"
+                          labelClassName="text-red-500 dark:text-red-400"
                           value={roomItems[rp.productId]?.consumedQuantity ?? 0}
                           onChange={(val) =>
                             handleRoomProductChange(
@@ -425,6 +426,7 @@ export default function StockMovements() {
                         />
                         <QuantityStepper
                           label="Reposto"
+                          labelClassName="text-green-500 dark:text-green-400"
                           value={
                             roomItems[rp.productId]?.restockedQuantity ?? 0
                           }
