@@ -4,7 +4,7 @@ import { ThemeToggle } from '../shared/theme-toggle';
 
 export function AuthLayout() {
   return (
-    <div className="min-h-screen bg-surface-secondary dark:bg-surface-dark flex flex-col">
+    <div className="min-h-screen bg-surface-secondary dark:bg-surface-dark flex flex-col transition-theme">
       <header className="flex items-center justify-between p-4">
         <Link
           to="/"
