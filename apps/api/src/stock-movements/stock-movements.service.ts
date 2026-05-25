@@ -66,11 +66,13 @@ export class StockMovementsService {
 
     for (const item of dto.items) {
       await this.ensureProductExists(item.productId);
-      const qty = await this.centralStockService.getQuantity(item.productId);
-      if (qty < item.consumedQuantity) {
-        throw new BadRequestException(
-          `Insufficient stock for product ${item.productId}: available ${qty}, required ${item.consumedQuantity}`,
-        );
+      if (item.restockedQuantity > 0) {
+        const qty = await this.centralStockService.getQuantity(item.productId);
+        if (qty < item.restockedQuantity) {
+          throw new BadRequestException(
+            `Insufficient stock for product ${item.productId}: available ${qty}, required ${item.restockedQuantity}`,
+          );
+        }
       }
     }
 
@@ -78,24 +80,40 @@ export class StockMovementsService {
       const records = [];
 
       for (const item of dto.items) {
-        const [movement] = await tx
-          .insert(stockMovements)
-          .values({
-            type: 'REPLENISH',
-            productId: item.productId,
-            quantity: item.consumedQuantity,
-            room,
-            userId,
-          })
-          .returning();
+        if (item.consumedQuantity > 0) {
+          const [consumption] = await tx
+            .insert(stockMovements)
+            .values({
+              type: 'CONSUMPTION',
+              productId: item.productId,
+              quantity: item.consumedQuantity,
+              room,
+              userId,
+            })
+            .returning();
+          records.push(consumption);
+        }
 
-        await this.upsertCentralStock(
-          tx,
-          item.productId,
-          -item.consumedQuantity,
-        );
+        if (item.restockedQuantity > 0) {
+          const [replenish] = await tx
+            .insert(stockMovements)
+            .values({
+              type: 'REPLENISH',
+              productId: item.productId,
+              quantity: item.restockedQuantity,
+              room,
+              userId,
+            })
+            .returning();
 
-        records.push(movement);
+          await this.upsertCentralStock(
+            tx,
+            item.productId,
+            -item.restockedQuantity,
+          );
+
+          records.push(replenish);
+        }
       }
 
       return records;
@@ -122,6 +140,7 @@ export class StockMovementsService {
           productId: dto.productId,
           quantity: dto.quantity,
           userId,
+          description: dto.description,
         })
         .returning();
 
