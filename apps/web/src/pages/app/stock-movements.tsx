@@ -198,7 +198,7 @@ export default function StockMovements() {
               <select
                 value={filterType}
                 onChange={(e) => setFilterType(e.target.value)}
-                className="px-3 py-1.5 text-sm border rounded-lg bg-white dark:bg-navy-800 dark:text-gray-100 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-gold-500/50 focus:border-gold-500"
+                className="px-3 py-1.5 text-sm border rounded-lg bg-white dark:bg-navy-800 dark:text-gray-100 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-gold-500/50 focus:border-gold-500 transition-theme"
               >
                 <option value="">Todos os tipos</option>
                 <option value="IN">Entrada</option>
@@ -211,7 +211,7 @@ export default function StockMovements() {
                 value={filterRoom}
                 onChange={(e) => setFilterRoom(e.target.value)}
                 placeholder="Quarto"
-                className="w-20 px-3 py-1.5 text-sm border rounded-lg bg-white dark:bg-navy-800 dark:text-gray-100 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-gold-500/50 focus:border-gold-500"
+                className="w-20 px-3 py-1.5 text-sm border rounded-lg bg-white dark:bg-navy-800 dark:text-gray-100 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-gold-500/50 focus:border-gold-500 transition-theme"
               />
             </div>
           </CardHeader>

@@ -201,7 +201,7 @@ export default function MinibarStandard() {
               id="minibar-product"
               value={selectedProductId}
               onChange={(e) => setSelectedProductId(e.target.value)}
-              className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:bg-navy-800 dark:text-gray-100 dark:border-gray-700"
+              className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:bg-navy-800 dark:text-gray-100 dark:border-gray-700 transition-theme"
             >
               <option value="">Selecione...</option>
               {availableProducts?.map((p) => (

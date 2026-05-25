@@ -195,7 +195,7 @@ export default function Dashboard() {
                       {cat.percentage.toFixed(0)}%
                     </span>
                   </div>
-                  <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                  <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden transition-theme">
                     <div
                       className="h-full bg-gold-500 rounded-full transition-all"
                       style={{ width: `${cat.percentage}%` }}
