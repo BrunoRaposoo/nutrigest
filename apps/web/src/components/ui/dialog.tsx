@@ -42,7 +42,7 @@ export function Dialog({
       />
       <div
         className={cn(
-          'relative z-10 w-full max-w-lg mx-4 rounded-xl border border-gray-200 bg-white shadow-xl',
+          'relative z-10 w-full max-w-lg mx-4 rounded-xl border border-gray-200 bg-white shadow-xl transition-theme',
           'dark:border-gray-800 dark:bg-navy-800',
           className,
         )}
@@ -56,7 +56,7 @@ export function Dialog({
           <button
             type="button"
             onClick={() => onOpenChange(false)}
-            className="p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            className="p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
           >
             <X className="h-5 w-5" />
           </button>
