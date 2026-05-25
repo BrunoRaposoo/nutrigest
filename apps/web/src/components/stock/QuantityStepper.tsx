@@ -30,7 +30,9 @@ export default function QuantityStepper({
       >
         −
       </button>
-      <span className="w-8 text-center text-lg font-semibold">{value}</span>
+      <span className="w-8 text-center text-lg font-semibold text-gray-900 dark:text-gray-100">
+        {value}
+      </span>
       <button
         type="button"
         onClick={() => onChange(Math.min(max, value + 1))}

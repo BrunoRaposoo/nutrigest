@@ -13,8 +13,8 @@ export default function RoomSelect({ value, onChange }: RoomSelectProps) {
       value={value}
       onChange={(e) => onChange(Number(e.target.value))}
       className="w-full px-4 py-3 text-lg rounded-xl border border-gray-300 dark:border-gray-600
-                 bg-white dark:bg-navy-800 font-medium cursor-pointer
-                 focus:outline-none focus:ring-2 focus:ring-navy-500"
+                 bg-white dark:bg-navy-800 dark:text-gray-100 font-medium cursor-pointer
+                 focus:outline-none focus:ring-2 focus:ring-gold-500/50"
     >
       <option value="" disabled>
         Selecione um quarto
