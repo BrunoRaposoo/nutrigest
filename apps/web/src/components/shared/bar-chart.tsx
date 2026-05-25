@@ -21,10 +21,10 @@ export function BarChart({
       aria-label="Gráfico de barras"
     >
       {data.map((d, i) => {
-        const barHeight = (d.value / max) * (height - 30);
+        const barHeight = (d.value / max) * (height - 40);
         const x =
           (width / data.length) * i + (width / data.length - barWidth) / 2;
-        const y = height - 20 - barHeight;
+        const y = height - 24 - barHeight;
         return (
           <g key={d.label}>
             <rect

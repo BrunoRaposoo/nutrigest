@@ -131,14 +131,31 @@ export default function Dashboard() {
             <CardHeader>
               <CardTitle>Consumo Mensal</CardTitle>
             </CardHeader>
-            <CardContent>
-              <BarChart
-                data={monthly.map((m) => ({
-                  label: m.month.slice(0, 3),
-                  value: m.replenishQty + m.mealOutQty,
-                }))}
-                height={220}
-              />
+            <CardContent className="space-y-4">
+              <div>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                  Reposições
+                </p>
+                <BarChart
+                  data={monthly.map((m) => ({
+                    label: m.month.slice(0, 3),
+                    value: m.replenishQty,
+                  }))}
+                  height={180}
+                />
+              </div>
+              <div>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                  Marmitas Retiradas
+                </p>
+                <BarChart
+                  data={monthly.map((m) => ({
+                    label: m.month.slice(0, 3),
+                    value: m.mealOutQty,
+                  }))}
+                  height={180}
+                />
+              </div>
             </CardContent>
           </Card>
         )}
@@ -155,7 +172,6 @@ export default function Dashboard() {
                   value: r.totalQuantity,
                 }))}
                 height={220}
-                color="#1a2a44"
               />
             </CardContent>
           </Card>
@@ -165,7 +181,7 @@ export default function Dashboard() {
       {categories && categories.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Distribuição por Categoria</CardTitle>
+            <CardTitle>Distribuição do Estoque por Categoria</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
