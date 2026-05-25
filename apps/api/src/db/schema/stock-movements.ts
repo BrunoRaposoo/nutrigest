@@ -11,6 +11,7 @@ import { users } from './users';
 
 export const stockMovementTypeEnum = pgEnum('stock_movement_type', [
   'IN',
+  'CONSUMPTION',
   'REPLENISH',
   'MEAL_OUT',
 ]);
