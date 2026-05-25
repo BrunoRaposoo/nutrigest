@@ -57,10 +57,10 @@ export default function ProductSelect({
         }}
         onFocus={() => setOpen(true)}
         placeholder={placeholder}
-        className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/50 focus:border-gold-500 dark:bg-navy-800 dark:text-gray-100 dark:border-gray-700"
+        className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/50 focus:border-gold-500 dark:bg-navy-800 dark:text-gray-100 dark:border-gray-700 transition-theme"
       />
       {open && filtered.length > 0 && (
-        <div className="absolute z-50 mt-1 w-full bg-white dark:bg-navy-800 border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+        <div className="absolute z-50 mt-1 w-full bg-white dark:bg-navy-800 border rounded-lg shadow-lg max-h-48 overflow-y-auto transition-theme">
           {filtered.map((product) => (
             <button
               key={product.id}
@@ -79,7 +79,7 @@ export default function ProductSelect({
                   className="w-6 h-6 rounded object-cover"
                 />
               )}
-              <span>{product.name}</span>
+              <span className="dark:text-gray-100">{product.name}</span>
               <span className="ml-auto text-xs text-gray-400">
                 {product.category === 'MEAL' ? 'Marmita' : 'Bebida'}
               </span>

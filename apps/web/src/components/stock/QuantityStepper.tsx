@@ -35,7 +35,7 @@ export default function QuantityStepper({
         disabled={value <= min}
         className="w-10 h-10 rounded-lg border border-gray-300 dark:border-gray-600 text-lg font-bold
                    disabled:opacity-30 hover:bg-gray-100 dark:hover:bg-navy-700
-                   transition-colors"
+                   transition-theme dark:text-gray-100"
       >
         −
       </button>
@@ -48,7 +48,7 @@ export default function QuantityStepper({
         disabled={value >= max}
         className="w-10 h-10 rounded-lg border border-gray-300 dark:border-gray-600 text-lg font-bold
                    disabled:opacity-30 hover:bg-gray-100 dark:hover:bg-navy-700
-                   transition-colors"
+                   transition-theme dark:text-gray-100"
       >
         +
       </button>
