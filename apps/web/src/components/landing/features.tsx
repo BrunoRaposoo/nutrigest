@@ -43,7 +43,7 @@ const features = [
 
 export function Features() {
   return (
-    <section className="py-20 px-4 bg-white dark:bg-navy-900">
+    <section className="py-20 px-4 bg-white dark:bg-navy-900 transition-theme">
       <div className="max-w-6xl mx-auto">
         <motion.h2
           initial={{ opacity: 0, y: 20 }}
@@ -70,7 +70,7 @@ export function Features() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.1 }}
-              className="p-6 rounded-xl border border-gray-200 dark:border-gray-800 hover:shadow-lg transition-shadow"
+              className="p-6 rounded-xl border border-gray-200 dark:border-gray-800 hover:shadow-lg transition-shadow transition-theme"
             >
               <feature.icon className="h-10 w-10 text-gold-500 mb-4" />
               <h3 className="text-lg font-semibold text-navy-900 dark:text-white">

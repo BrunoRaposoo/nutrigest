@@ -21,7 +21,7 @@ const steps = [
 
 export function HowItWorks() {
   return (
-    <section className="py-20 px-4 bg-surface-secondary dark:bg-surface-dark">
+    <section className="py-20 px-4 bg-surface-secondary dark:bg-surface-dark transition-theme">
       <div className="max-w-4xl mx-auto">
         <motion.h2
           initial={{ opacity: 0, y: 20 }}
