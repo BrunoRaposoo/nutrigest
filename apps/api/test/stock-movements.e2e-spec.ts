@@ -193,16 +193,20 @@ describe('StockMovements (e2e)', () => {
         url: '/stock-movements/replenish/105',
         headers: { authorization: `Bearer ${accessToken}` },
         payload: {
-          items: [{ productId: product.id, consumedQuantity: 5 }],
+          items: [{ productId: product.id, consumedQuantity: 5, restockedQuantity: 5 }],
         },
       });
 
       expect(res.statusCode).toBe(201);
       const body = JSON.parse(res.body);
       expect(Array.isArray(body)).toBe(true);
-      expect(body[0].type).toBe('REPLENISH');
+      expect(body.length).toBe(2);
+      expect(body[0].type).toBe('CONSUMPTION');
       expect(body[0].room).toBe(105);
       expect(body[0].quantity).toBe(5);
+      expect(body[1].type).toBe('REPLENISH');
+      expect(body[1].room).toBe(105);
+      expect(body[1].quantity).toBe(5);
     });
 
     it('should allow OPERATOR', async () => {
@@ -222,7 +226,7 @@ describe('StockMovements (e2e)', () => {
         url: '/stock-movements/replenish/101',
         headers: { authorization: `Bearer ${operator.accessToken}` },
         payload: {
-          items: [{ productId: product.id, consumedQuantity: 3 }],
+          items: [{ productId: product.id, consumedQuantity: 3, restockedQuantity: 3 }],
         },
       });
 
@@ -246,7 +250,7 @@ describe('StockMovements (e2e)', () => {
         url: '/stock-movements/replenish/101',
         headers: { authorization: `Bearer ${accessToken}` },
         payload: {
-          items: [{ productId: product.id, consumedQuantity: 10 }],
+          items: [{ productId: product.id, consumedQuantity: 0, restockedQuantity: 10 }],
         },
       });
 
@@ -262,7 +266,7 @@ describe('StockMovements (e2e)', () => {
         url: '/stock-movements/replenish/999',
         headers: { authorization: `Bearer ${accessToken}` },
         payload: {
-          items: [{ productId: product.id, consumedQuantity: 1 }],
+          items: [{ productId: product.id, consumedQuantity: 0, restockedQuantity: 1 }],
         },
       });
 
@@ -287,7 +291,7 @@ describe('StockMovements (e2e)', () => {
         method: 'POST',
         url: '/stock-movements/meal-out',
         headers: { authorization: `Bearer ${accessToken}` },
-        payload: { productId: product.id, quantity: 5 },
+        payload: { productId: product.id, quantity: 5, description: 'E2E Test Meal' },
       });
 
       expect(res.statusCode).toBe(201);
@@ -312,7 +316,7 @@ describe('StockMovements (e2e)', () => {
         method: 'POST',
         url: '/stock-movements/meal-out',
         headers: { authorization: `Bearer ${operator.accessToken}` },
-        payload: { productId: product.id, quantity: 2 },
+        payload: { productId: product.id, quantity: 2, description: 'Operator meal' },
       });
 
       expect(res.statusCode).toBe(201);
@@ -326,7 +330,7 @@ describe('StockMovements (e2e)', () => {
         method: 'POST',
         url: '/stock-movements/meal-out',
         headers: { authorization: `Bearer ${accessToken}` },
-        payload: { productId: product.id, quantity: 999 },
+        payload: { productId: product.id, quantity: 999, description: 'Too many' },
       });
 
       expect(res.statusCode).toBe(400);
@@ -342,6 +346,7 @@ describe('StockMovements (e2e)', () => {
         payload: {
           productId: '00000000-0000-0000-0000-000000000000',
           quantity: 1,
+          description: 'not found',
         },
       });
 
