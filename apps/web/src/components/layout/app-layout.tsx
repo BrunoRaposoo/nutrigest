@@ -88,7 +88,7 @@ export function AppLayout() {
 
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 w-64 bg-white dark:bg-navy-800 border-r border-gray-200 dark:border-gray-800 transform transition-transform transition-theme lg:translate-x-0 lg:static lg:z-auto',
+          'fixed inset-y-0 left-0 z-40 w-64 bg-white dark:bg-navy-800 border-r border-gray-200 dark:border-gray-800 transform transition-[transform,background-color,border-color,color] duration-300 lg:translate-x-0 lg:static lg:z-auto',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full',
         )}
       >
