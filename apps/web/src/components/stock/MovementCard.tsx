@@ -1,5 +1,5 @@
-import type { StockMovement } from '../../types/stock';
 import { cn, formatDate } from '../../lib/utils';
+import type { StockMovement } from '../../types/stock';
 
 interface MovementCardProps {
   movement: StockMovement;
@@ -19,8 +19,7 @@ const typeConfig: Record<
   },
   REPLENISH: {
     label: 'Reposição',
-    color:
-      'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+    color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
   },
   MEAL_OUT: {
     label: 'Marmita',

@@ -193,7 +193,13 @@ describe('StockMovements (e2e)', () => {
         url: '/stock-movements/replenish/105',
         headers: { authorization: `Bearer ${accessToken}` },
         payload: {
-          items: [{ productId: product.id, consumedQuantity: 5, restockedQuantity: 5 }],
+          items: [
+            {
+              productId: product.id,
+              consumedQuantity: 5,
+              restockedQuantity: 5,
+            },
+          ],
         },
       });
 
@@ -226,7 +232,13 @@ describe('StockMovements (e2e)', () => {
         url: '/stock-movements/replenish/101',
         headers: { authorization: `Bearer ${operator.accessToken}` },
         payload: {
-          items: [{ productId: product.id, consumedQuantity: 3, restockedQuantity: 3 }],
+          items: [
+            {
+              productId: product.id,
+              consumedQuantity: 3,
+              restockedQuantity: 3,
+            },
+          ],
         },
       });
 
@@ -250,7 +262,13 @@ describe('StockMovements (e2e)', () => {
         url: '/stock-movements/replenish/101',
         headers: { authorization: `Bearer ${accessToken}` },
         payload: {
-          items: [{ productId: product.id, consumedQuantity: 0, restockedQuantity: 10 }],
+          items: [
+            {
+              productId: product.id,
+              consumedQuantity: 0,
+              restockedQuantity: 10,
+            },
+          ],
         },
       });
 
@@ -266,7 +284,13 @@ describe('StockMovements (e2e)', () => {
         url: '/stock-movements/replenish/999',
         headers: { authorization: `Bearer ${accessToken}` },
         payload: {
-          items: [{ productId: product.id, consumedQuantity: 0, restockedQuantity: 1 }],
+          items: [
+            {
+              productId: product.id,
+              consumedQuantity: 0,
+              restockedQuantity: 1,
+            },
+          ],
         },
       });
 
@@ -291,7 +315,11 @@ describe('StockMovements (e2e)', () => {
         method: 'POST',
         url: '/stock-movements/meal-out',
         headers: { authorization: `Bearer ${accessToken}` },
-        payload: { productId: product.id, quantity: 5, description: 'E2E Test Meal' },
+        payload: {
+          productId: product.id,
+          quantity: 5,
+          description: 'E2E Test Meal',
+        },
       });
 
       expect(res.statusCode).toBe(201);
@@ -316,7 +344,11 @@ describe('StockMovements (e2e)', () => {
         method: 'POST',
         url: '/stock-movements/meal-out',
         headers: { authorization: `Bearer ${operator.accessToken}` },
-        payload: { productId: product.id, quantity: 2, description: 'Operator meal' },
+        payload: {
+          productId: product.id,
+          quantity: 2,
+          description: 'Operator meal',
+        },
       });
 
       expect(res.statusCode).toBe(201);
@@ -330,7 +362,11 @@ describe('StockMovements (e2e)', () => {
         method: 'POST',
         url: '/stock-movements/meal-out',
         headers: { authorization: `Bearer ${accessToken}` },
-        payload: { productId: product.id, quantity: 999, description: 'Too many' },
+        payload: {
+          productId: product.id,
+          quantity: 999,
+          description: 'Too many',
+        },
       });
 
       expect(res.statusCode).toBe(400);

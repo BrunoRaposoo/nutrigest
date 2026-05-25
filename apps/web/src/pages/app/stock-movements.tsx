@@ -1,4 +1,8 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import MovementCard from '../../components/stock/MovementCard';
+import ProductSelect from '../../components/stock/ProductSelect';
+import QuantityStepper from '../../components/stock/QuantityStepper';
+import RoomSelect from '../../components/stock/RoomSelect';
 import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 import {
@@ -9,10 +13,7 @@ import {
 } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
 import { Skeleton } from '../../components/ui/skeleton';
-import MovementCard from '../../components/stock/MovementCard';
-import ProductSelect from '../../components/stock/ProductSelect';
-import QuantityStepper from '../../components/stock/QuantityStepper';
-import RoomSelect from '../../components/stock/RoomSelect';
+import { useMinibarStandard } from '../../hooks/queries/use-minibar-queries';
 import {
   useCreateInMovement,
   useCreateMealOut,
@@ -20,7 +21,6 @@ import {
   useMovements,
 } from '../../hooks/queries/use-movement-queries';
 import { useProducts } from '../../hooks/queries/use-product-queries';
-import { useMinibarStandard } from '../../hooks/queries/use-minibar-queries';
 import { cn, formatDate } from '../../lib/utils';
 
 type Tab = 'list' | 'in' | 'rooms' | 'meals';
@@ -38,9 +38,10 @@ export default function StockMovements() {
   const { data: products = [] } = useProducts();
 
   // IN tab state
+  const nextItemId = useRef(2);
   const [inItems, setInItems] = useState<
-    Array<{ productId: string; quantity: number }>
-  >([{ productId: '', quantity: 1 }]);
+    Array<{ id: number; productId: string; quantity: number }>
+  >([{ id: 1, productId: '', quantity: 1 }]);
   const [inDescription, setInDescription] = useState('');
   const createIn = useCreateInMovement();
 
@@ -48,10 +49,7 @@ export default function StockMovements() {
   const [selectedRoom, setSelectedRoom] = useState(0);
   const { data: roomProducts = [] } = useMinibarStandard(selectedRoom);
   const [roomItems, setRoomItems] = useState<
-    Record<
-      string,
-      { consumedQuantity: number; restockedQuantity: number }
-    >
+    Record<string, { consumedQuantity: number; restockedQuantity: number }>
   >({});
   const createReplenish = useCreateReplenish();
 
@@ -66,22 +64,23 @@ export default function StockMovements() {
   const [filterRoom, setFilterRoom] = useState('');
 
   const handleAddInItem = () => {
-    setInItems([...inItems, { productId: '', quantity: 1 }]);
+    const id = nextItemId.current++;
+    setInItems([...inItems, { id, productId: '', quantity: 1 }]);
   };
 
   const handleUpdateInItem = (
-    index: number,
+    id: number,
     field: 'productId' | 'quantity',
     value: string | number,
   ) => {
-    const updated = [...inItems];
-    updated[index] = { ...updated[index], [field]: value };
-    setInItems(updated);
+    setInItems((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item)),
+    );
   };
 
-  const handleRemoveInItem = (index: number) => {
+  const handleRemoveInItem = (id: number) => {
     if (inItems.length > 1) {
-      setInItems(inItems.filter((_, i) => i !== index));
+      setInItems((prev) => prev.filter((item) => item.id !== id));
     }
   };
 
@@ -92,10 +91,11 @@ export default function StockMovements() {
     if (validItems.length === 0) return;
 
     await createIn.mutateAsync({
-      items: validItems,
+      items: validItems.map(({ id: _id, ...rest }) => rest),
       description: inDescription || undefined,
     });
-    setInItems([{ productId: '', quantity: 1 }]);
+    nextItemId.current = 2;
+    setInItems([{ id: 1, productId: '', quantity: 1 }]);
     setInDescription('');
   };
 
@@ -219,6 +219,7 @@ export default function StockMovements() {
             {isLoading ? (
               <div className="p-4 space-y-3">
                 {Array.from({ length: 5 }).map((_, i) => (
+                  /* biome-ignore lint/suspicious/noArrayIndexKey: skeleton loading placeholder */
                   <Skeleton key={i} className="h-20 w-full rounded-xl" />
                 ))}
               </div>
@@ -316,32 +317,32 @@ export default function StockMovements() {
             <CardTitle>Entrada de Mercadorias</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {inItems.map((item, index) => (
+            {inItems.map((item) => (
               <div
-                key={index}
+                key={item.id}
                 className="flex items-end gap-2 pb-4 border-b border-gray-100 dark:border-gray-800"
               >
                 <div className="flex-1">
-                  <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
+                  <div className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
                     Produto
-                  </label>
+                  </div>
                   <ProductSelect
                     products={products}
                     value={item.productId}
                     onChange={(id) =>
-                      handleUpdateInItem(index, 'productId', id)
+                      handleUpdateInItem(item.id, 'productId', id)
                     }
                     placeholder="Buscar produto..."
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
+                  <div className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
                     Qtd
-                  </label>
+                  </div>
                   <QuantityStepper
                     value={item.quantity}
                     onChange={(qty) =>
-                      handleUpdateInItem(index, 'quantity', qty)
+                      handleUpdateInItem(item.id, 'quantity', qty)
                     }
                     min={1}
                     max={999}
@@ -350,7 +351,7 @@ export default function StockMovements() {
                 {inItems.length > 1 && (
                   <button
                     type="button"
-                    onClick={() => handleRemoveInItem(index)}
+                    onClick={() => handleRemoveInItem(item.id)}
                     className="mb-1 p-2 text-red-500 hover:text-red-700 text-lg"
                   >
                     ×
@@ -413,9 +414,7 @@ export default function StockMovements() {
                       <div className="flex flex-col gap-2">
                         <QuantityStepper
                           label="Consumido"
-                          value={
-                            roomItems[rp.productId]?.consumedQuantity ?? 0
-                          }
+                          value={roomItems[rp.productId]?.consumedQuantity ?? 0}
                           onChange={(val) =>
                             handleRoomProductChange(
                               rp.productId,
@@ -459,7 +458,7 @@ export default function StockMovements() {
                 <div className="text-center text-gray-500 dark:text-gray-400 py-8">
                   Nenhum produto configurado para este quarto.{' '}
                   <span className="block text-sm mt-1">
-                    Configure os produtos padrão em{" "}
+                    Configure os produtos padrão em{' '}
                     <span className="font-medium">Quartos</span> no menu.
                   </span>
                 </div>
@@ -480,9 +479,9 @@ export default function StockMovements() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
+              <div className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
                 Produto
-              </label>
+              </div>
               <ProductSelect
                 products={products}
                 value={mealProductId}
@@ -492,9 +491,9 @@ export default function StockMovements() {
             </div>
 
             <div>
-              <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
+              <div className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
                 Quantidade
-              </label>
+              </div>
               <QuantityStepper
                 value={mealQty}
                 onChange={setMealQty}

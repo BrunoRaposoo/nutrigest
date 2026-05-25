@@ -133,7 +133,7 @@ describe('StockMovementsService', () => {
       await expect(
         service.createReplenish(
           999,
-           { items: [{ productId, consumedQuantity: 1, restockedQuantity: 0 }] },
+          { items: [{ productId, consumedQuantity: 1, restockedQuantity: 0 }] },
           userId,
         ),
       ).rejects.toThrow(NotFoundException);
@@ -150,7 +150,9 @@ describe('StockMovementsService', () => {
       await expect(
         service.createReplenish(
           101,
-           { items: [{ productId, consumedQuantity: 0, restockedQuantity: 10 }] },
+          {
+            items: [{ productId, consumedQuantity: 0, restockedQuantity: 10 }],
+          },
           userId,
         ),
       ).rejects.toThrow(BadRequestException);
@@ -220,7 +222,10 @@ describe('StockMovementsService', () => {
       await centralStock.update(productId, { quantity: 1 });
 
       await expect(
-        service.createMealOut({ productId, quantity: 5, description: 'test' }, userId),
+        service.createMealOut(
+          { productId, quantity: 5, description: 'test' },
+          userId,
+        ),
       ).rejects.toThrow(BadRequestException);
     });
 

@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Product } from '../../types/product';
 
 interface ProductSelectProps {
@@ -50,7 +50,7 @@ export default function ProductSelect({
     <div ref={ref} className="relative">
       <input
         type="text"
-        value={open ? query : selected?.name ?? ''}
+        value={open ? query : (selected?.name ?? '')}
         onChange={(e) => {
           setQuery(e.target.value);
           setOpen(true);
@@ -73,7 +73,11 @@ export default function ProductSelect({
               className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-navy-700 flex items-center gap-2"
             >
               {product.imageUrl && (
-                <img src={product.imageUrl} alt="" className="w-6 h-6 rounded object-cover" />
+                <img
+                  src={product.imageUrl}
+                  alt=""
+                  className="w-6 h-6 rounded object-cover"
+                />
               )}
               <span>{product.name}</span>
               <span className="ml-auto text-xs text-gray-400">
