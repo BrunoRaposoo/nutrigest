@@ -1,0 +1,15 @@
+node_modules
+.git
+.gitignore
+.env
+.env.local
+*.log
+dist
+node_modules
+.gitkeep
+**/.gitkeep
+README.md
+docs
+.opencode
+uploads
+pnpm-lock.yaml
