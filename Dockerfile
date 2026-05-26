@@ -29,7 +29,8 @@ COPY --from=build /app/apps/api/node_modules ./node_modules
 COPY --from=build /app/apps/api/package.json ./
 COPY --from=build /app/apps/web/dist ./public
 COPY --from=build /app/packages ./packages
-COPY drizzle.config.ts ./
+COPY --from=build /app/apps/api/drizzle.config.ts ./
+COPY --from=build /app/apps/api/drizzle ./drizzle
 
 ENV NODE_ENV=production
 ENV PORT=3000
