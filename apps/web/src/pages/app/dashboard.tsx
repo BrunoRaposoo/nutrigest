@@ -1,18 +1,29 @@
+import { useState } from 'react';
 import { BarChart } from '../../components/shared/bar-chart';
 import { Badge } from '../../components/ui/badge';
+import { Button } from '../../components/ui/button';
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from '../../components/ui/card';
+import { Input } from '../../components/ui/input';
+import { Select } from '../../components/ui/select';
 import { Skeleton } from '../../components/ui/skeleton';
 import {
   useCategoryDistribution,
+  useConsumptionByRoomCsv,
+  useConsumptionByRoomPdf,
   useDashboardSummary,
+  useMealRankingCsv,
+  useMealRankingPdf,
   useMonthlyConsumption,
   useRoomComparison,
+  useStockHistoryCsv,
+  useStockHistoryPdf,
 } from '../../hooks/queries/use-dashboard-queries';
+import { useProducts } from '../../hooks/queries/use-product-queries';
 import { formatDateShort } from '../../lib/utils';
 
 export default function Dashboard() {
@@ -20,6 +31,33 @@ export default function Dashboard() {
   const { data: monthly } = useMonthlyConsumption();
   const { data: rooms } = useRoomComparison();
   const { data: categories } = useCategoryDistribution();
+
+  const [consumptionFrom, setConsumptionFrom] = useState('');
+  const [consumptionTo, setConsumptionTo] = useState('');
+  const [rankingFrom, setRankingFrom] = useState('');
+  const [rankingTo, setRankingTo] = useState('');
+  const [rankingLimit, setRankingLimit] = useState('10');
+  const [historyProductId, setHistoryProductId] = useState('');
+  const [historyFrom, setHistoryFrom] = useState('');
+  const [historyTo, setHistoryTo] = useState('');
+  const { data: products } = useProducts();
+
+  const {
+    download: downloadConsumptionCsv,
+    isDownloading: isConsumptionCsvLoading,
+  } = useConsumptionByRoomCsv(consumptionFrom, consumptionTo);
+  const {
+    download: downloadConsumptionPdf,
+    isDownloading: isConsumptionPdfLoading,
+  } = useConsumptionByRoomPdf(consumptionFrom, consumptionTo);
+  const { download: downloadRankingCsv, isDownloading: isRankingCsvLoading } =
+    useMealRankingCsv(rankingFrom, rankingTo, rankingLimit);
+  const { download: downloadRankingPdf, isDownloading: isRankingPdfLoading } =
+    useMealRankingPdf(rankingFrom, rankingTo, rankingLimit);
+  const { download: downloadHistoryCsv, isDownloading: isHistoryCsvLoading } =
+    useStockHistoryCsv(historyProductId, historyFrom, historyTo);
+  const { download: downloadHistoryPdf, isDownloading: isHistoryPdfLoading } =
+    useStockHistoryPdf(historyProductId, historyFrom, historyTo);
 
   if (summaryLoading) {
     return (
@@ -272,6 +310,162 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Consumo por Quarto</CardTitle>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              Exportar consumo agrupado por quarto e produto
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex gap-2">
+              <Input
+                type="date"
+                label="De"
+                value={consumptionFrom}
+                onChange={(e) => setConsumptionFrom(e.target.value)}
+              />
+              <Input
+                type="date"
+                label="Até"
+                value={consumptionTo}
+                onChange={(e) => setConsumptionTo(e.target.value)}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                isLoading={isConsumptionCsvLoading}
+                onClick={downloadConsumptionCsv}
+              >
+                CSV
+              </Button>
+              <Button
+                size="sm"
+                variant="primary"
+                isLoading={isConsumptionPdfLoading}
+                onClick={downloadConsumptionPdf}
+              >
+                PDF
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Ranking de Marmitas</CardTitle>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              Exportar ranking de produtos retirados
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex gap-2">
+              <Input
+                type="date"
+                label="De"
+                value={rankingFrom}
+                onChange={(e) => setRankingFrom(e.target.value)}
+              />
+              <Input
+                type="date"
+                label="Até"
+                value={rankingTo}
+                onChange={(e) => setRankingTo(e.target.value)}
+              />
+            </div>
+            <div className="flex items-end gap-2">
+              <Input
+                type="number"
+                label="Limite"
+                min={1}
+                max={100}
+                value={rankingLimit}
+                onChange={(e) => setRankingLimit(e.target.value)}
+                className="w-24"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                isLoading={isRankingCsvLoading}
+                onClick={downloadRankingCsv}
+              >
+                CSV
+              </Button>
+              <Button
+                size="sm"
+                variant="primary"
+                isLoading={isRankingPdfLoading}
+                onClick={downloadRankingPdf}
+              >
+                PDF
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Histórico de Estoque</CardTitle>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              Exportar movimentações de um produto
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Select
+              label="Produto"
+              placeholder="Selecione um produto"
+              value={historyProductId}
+              onChange={(e) => setHistoryProductId(e.target.value)}
+              options={
+                products?.map((p) => ({
+                  value: p.id,
+                  label: p.name,
+                })) ?? []
+              }
+            />
+            <div className="flex gap-2">
+              <Input
+                type="date"
+                label="De"
+                value={historyFrom}
+                onChange={(e) => setHistoryFrom(e.target.value)}
+              />
+              <Input
+                type="date"
+                label="Até"
+                value={historyTo}
+                onChange={(e) => setHistoryTo(e.target.value)}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={!historyProductId}
+                isLoading={isHistoryCsvLoading}
+                onClick={downloadHistoryCsv}
+              >
+                CSV
+              </Button>
+              <Button
+                size="sm"
+                variant="primary"
+                disabled={!historyProductId}
+                isLoading={isHistoryPdfLoading}
+                onClick={downloadHistoryPdf}
+              >
+                PDF
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
