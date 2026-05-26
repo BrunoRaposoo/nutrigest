@@ -1,4 +1,4 @@
-FROM node:20-alpine AS base
+FROM node:24-alpine AS base
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
 FROM base AS deps
@@ -21,16 +21,16 @@ COPY apps/web ./apps/web
 COPY tsconfig*.json ./
 RUN pnpm build:api && pnpm build:web
 
+RUN pnpm deploy --filter @nutrigest/api /app/deploy && \
+    cp -r apps/api/dist /app/deploy/dist && \
+    cp -r apps/web/dist /app/deploy/public && \
+    cp apps/api/drizzle.config.ts /app/deploy/ && \
+    cp -r apps/api/drizzle /app/deploy/drizzle
+
 FROM base AS runner
 WORKDIR /app
 RUN apk add --no-cache curl
-COPY --from=build /app/apps/api/dist ./dist
-COPY --from=build /app/apps/api/node_modules ./node_modules
-COPY --from=build /app/apps/api/package.json ./
-COPY --from=build /app/apps/web/dist ./public
-COPY --from=build /app/packages ./packages
-COPY --from=build /app/apps/api/drizzle.config.ts ./
-COPY --from=build /app/apps/api/drizzle ./drizzle
+COPY --from=build /app/deploy ./
 
 ENV NODE_ENV=production
 ENV PORT=3000
