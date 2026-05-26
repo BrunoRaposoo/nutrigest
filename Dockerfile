@@ -22,10 +22,11 @@ COPY tsconfig*.json ./
 RUN pnpm build:api && pnpm build:web
 
 RUN pnpm deploy --legacy --filter @nutrigest/api /app/deploy && \
+    rm -rf /app/deploy/drizzle && \
     cp -r apps/api/dist /app/deploy/dist && \
     cp -r apps/web/dist /app/deploy/public && \
     cp apps/api/drizzle.config.ts /app/deploy/ && \
-    cp -r apps/api/drizzle/. /app/deploy/drizzle/
+    cp -r apps/api/drizzle /app/deploy/drizzle
 
 FROM base AS runner
 WORKDIR /app
