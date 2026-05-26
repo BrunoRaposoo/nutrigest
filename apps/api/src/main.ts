@@ -46,9 +46,14 @@ async function bootstrap() {
       decorateReply: false,
     });
 
-    const instance = app.getHttpAdapter().getInstance() as import('fastify').FastifyInstance;
+    const instance = app
+      .getHttpAdapter()
+      .getInstance() as import('fastify').FastifyInstance;
     instance.setNotFoundHandler(
-      (_request: import('fastify').FastifyRequest, reply: import('fastify').FastifyReply) => {
+      (
+        _request: import('fastify').FastifyRequest,
+        reply: import('fastify').FastifyReply,
+      ) => {
         reply.sendFile('index.html');
       },
     );
