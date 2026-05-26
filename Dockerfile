@@ -21,7 +21,7 @@ COPY apps/web ./apps/web
 COPY tsconfig*.json ./
 RUN pnpm build:api && pnpm build:web
 
-RUN pnpm deploy --filter @nutrigest/api /app/deploy && \
+RUN pnpm deploy --legacy --filter @nutrigest/api /app/deploy && \
     cp -r apps/api/dist /app/deploy/dist && \
     cp -r apps/web/dist /app/deploy/public && \
     cp apps/api/drizzle.config.ts /app/deploy/ && \
