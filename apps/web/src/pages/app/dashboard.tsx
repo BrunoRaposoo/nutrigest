@@ -246,6 +246,71 @@ export default function Dashboard() {
         </Card>
       )}
 
+      {summary && summary.recentMovements.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Movimentações Recentes</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-200 dark:border-gray-800">
+                    <th className="text-left p-3 font-medium text-gray-500 dark:text-gray-400">
+                      Produto
+                    </th>
+                    <th className="text-left p-3 font-medium text-gray-500 dark:text-gray-400">
+                      Tipo
+                    </th>
+                    <th className="text-right p-3 font-medium text-gray-500 dark:text-gray-400">
+                      Qtd
+                    </th>
+                    <th className="text-right p-3 font-medium text-gray-500 dark:text-gray-400 hidden sm:table-cell">
+                      Data
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {summary.recentMovements.map((mov) => (
+                    <tr
+                      key={mov.id}
+                      className="border-b border-gray-100 dark:border-gray-800/50"
+                    >
+                      <td className="p-3 text-gray-900 dark:text-gray-100">
+                        {mov.productName}
+                      </td>
+                      <td className="p-3">
+                        <Badge
+                          variant={
+                            mov.type === 'IN'
+                              ? 'info'
+                              : mov.type === 'REPLENISH'
+                                ? 'success'
+                                : 'warning'
+                          }
+                        >
+                          {mov.type === 'IN'
+                            ? 'Entrada'
+                            : mov.type === 'REPLENISH'
+                              ? 'Reposição'
+                              : 'Retirada'}
+                        </Badge>
+                      </td>
+                      <td className="p-3 text-right text-gray-700 dark:text-gray-300">
+                        {mov.quantity}
+                      </td>
+                      <td className="p-3 text-right text-gray-500 dark:text-gray-400 hidden sm:table-cell">
+                        {formatDateShort(mov.createdAt)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
@@ -401,71 +466,6 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
-
-      {summary && summary.recentMovements.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Movimentações Recentes</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-200 dark:border-gray-800">
-                    <th className="text-left p-3 font-medium text-gray-500 dark:text-gray-400">
-                      Produto
-                    </th>
-                    <th className="text-left p-3 font-medium text-gray-500 dark:text-gray-400">
-                      Tipo
-                    </th>
-                    <th className="text-right p-3 font-medium text-gray-500 dark:text-gray-400">
-                      Qtd
-                    </th>
-                    <th className="text-right p-3 font-medium text-gray-500 dark:text-gray-400 hidden sm:table-cell">
-                      Data
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {summary.recentMovements.map((mov) => (
-                    <tr
-                      key={mov.id}
-                      className="border-b border-gray-100 dark:border-gray-800/50"
-                    >
-                      <td className="p-3 text-gray-900 dark:text-gray-100">
-                        {mov.productName}
-                      </td>
-                      <td className="p-3">
-                        <Badge
-                          variant={
-                            mov.type === 'IN'
-                              ? 'info'
-                              : mov.type === 'REPLENISH'
-                                ? 'success'
-                                : 'warning'
-                          }
-                        >
-                          {mov.type === 'IN'
-                            ? 'Entrada'
-                            : mov.type === 'REPLENISH'
-                              ? 'Reposição'
-                              : 'Retirada'}
-                        </Badge>
-                      </td>
-                      <td className="p-3 text-right text-gray-700 dark:text-gray-300">
-                        {mov.quantity}
-                      </td>
-                      <td className="p-3 text-right text-gray-500 dark:text-gray-400 hidden sm:table-cell">
-                        {formatDateShort(mov.createdAt)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }
