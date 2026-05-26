@@ -322,7 +322,7 @@ export class DashboardService {
   }
 
   async getCategoryDistribution() {
-    const [result] = await this.db.db
+    const results = await this.db.db
       .select({
         category: products.category,
         quantity: sql<number>`coalesce(sum(${centralStock.quantity}), 0)`,
@@ -333,20 +333,20 @@ export class DashboardService {
       .groupBy(products.category);
 
     const beverage =
-      result?.category === 'BEVERAGE' ? Number(result.quantity) : 0;
-    const meal = result?.category === 'MEAL' ? Number(result.quantity) : 0;
-    const total = beverage + meal || 1;
+      results.find((r) => r.category === 'BEVERAGE')?.quantity ?? 0;
+    const meal = results.find((r) => r.category === 'MEAL')?.quantity ?? 0;
+    const total = Number(beverage) + Number(meal) || 1;
 
     return [
       {
         category: 'BEVERAGE',
-        quantity: beverage,
-        percentage: Math.round((beverage / total) * 100),
+        quantity: Number(beverage),
+        percentage: Math.round((Number(beverage) / total) * 100),
       },
       {
         category: 'MEAL',
-        quantity: meal,
-        percentage: Math.round((meal / total) * 100),
+        quantity: Number(meal),
+        percentage: Math.round((Number(meal) / total) * 100),
       },
     ];
   }

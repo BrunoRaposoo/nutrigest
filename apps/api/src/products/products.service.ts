@@ -51,6 +51,8 @@ export class ProductsService {
       })
       .returning();
 
+    await this.centralStockService.update(product.id, { quantity: 0 });
+
     return product;
   }
 

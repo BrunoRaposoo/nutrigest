@@ -2,8 +2,8 @@ import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
 export const StockHistorySchema = z.object({
-  from: z.string().datetime().optional(),
-  to: z.string().datetime().optional(),
+  from: z.string().date().optional(),
+  to: z.string().date().optional(),
 });
 
 export class StockHistoryDto extends createZodDto(StockHistorySchema) {}

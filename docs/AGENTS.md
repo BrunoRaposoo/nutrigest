@@ -44,6 +44,16 @@ nutrigest/
 5. Após merge em `dev` pelo usuário, continuar próximo desenvolvimento
 6. `dev` → `main` apenas quando a fase estiver completa e testada
 
+### Fluxo atual (Frontend fase 2)
+Nesta fase, o agente (opencode) segue este fluxo:
+1. **Agente desenvolve e commita** na branch atual (`feat/frontend-foundation`)
+2. **Usuário faz push manualmente** para o remoto
+3. **Usuário abre PR manualmente** no GitHub (`feat/frontend-foundation` → `dev`)
+4. **Usuário faz merge em `dev` manualmente**
+5. Após merge, agente continua com próxima funcionalidade
+
+> O agente NUNCA faz push, NUNCA abre PR, e NUNCA mergeia. Essas ações são exclusivas do usuário.
+
 ### Commits
 - Usar commits convencionais: `feat:`, `fix:`, `test:`, `docs:`, `refactor:`
 - Um commit por sub-feature (ex: `feat: add user registration with auth module`)
@@ -94,6 +104,13 @@ docker compose down          # Para serviços
 - **Spec-driven:** Toda feature documentada em `docs/superpowers/`
 - **Swagger:** Toda rota documentada com decorators OpenAPI
 
+### Frontend (Web)
+
+- **Mobile-first:** Todo layout deve ser responsivo e priorizar telas pequenas (celulares/tablets). O app será usado primariamente em dispositivos móveis.
+- **Testes:** Vitest + Testing Library para testes unitários de componentes e páginas. Testes de API cobertos pelo backend (Jest).
+- **Componentes:** Primitivos próprios (shadcn/ui style) com Tailwind. Sem bibliotecas de UI prontas.
+- **Gráficos:** SVG puro (BarChart customizado). Sem recharts ou chart.js.
+
 ## Endpoints Atuais
 
 ### Auth (`/auth`)
@@ -131,10 +148,10 @@ docker compose down          # Para serviços
 
 | Método | Rota | Auth | Roles | Descrição |
 |--------|------|------|-------|-----------|
-| GET | `/stock-movements` | JWT | ADMIN, TECHNICIAN, OPERATOR | Listar movimentações (filtros: type, room, data, paginação) |
+| GET | `/stock-movements` | JWT | ADMIN, TECHNICIAN, OPERATOR | Listar movimentações (filtros: type, room, data, paginação). Tipos: IN, CONSUMPTION, REPLENISH, MEAL_OUT |
 | POST | `/stock-movements/in` | JWT | ADMIN, TECHNICIAN | Registrar entrada de mercadorias (batch) |
-| POST | `/stock-movements/replenish/:room` | JWT | ADMIN, TECHNICIAN, OPERATOR | Reposição de frigobar |
-| POST | `/stock-movements/meal-out` | JWT | ADMIN, TECHNICIAN, OPERATOR | Retirada de marmita |
+| POST | `/stock-movements/replenish/:room` | JWT | ADMIN, TECHNICIAN, OPERATOR | Reposição de frigobar (cria CONSUMPTION + REPLENISH) |
+| POST | `/stock-movements/meal-out` | JWT | ADMIN, TECHNICIAN, OPERATOR | Retirada de marmita (description obrigatório) |
 
 ### Products (`/products`)
 

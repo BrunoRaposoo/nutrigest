@@ -6,7 +6,8 @@ export const CreateReplenishMovementSchema = z.object({
     .array(
       z.object({
         productId: z.string().uuid(),
-        consumedQuantity: z.number().int().min(1),
+        consumedQuantity: z.number().int().min(0),
+        restockedQuantity: z.number().int().min(0),
       }),
     )
     .min(1),
