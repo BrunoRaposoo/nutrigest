@@ -6,6 +6,7 @@ import {
 import { JwtModule } from '@nestjs/jwt';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { DbService } from '../db/db.service';
+import { refreshTokens } from '../db/schema';
 import { AuthService } from './auth.service';
 
 describe('AuthService', () => {
@@ -21,6 +22,10 @@ describe('AuthService', () => {
     service = module.get<AuthService>(AuthService);
     db = module.get<DbService>(DbService);
     await db.onModuleInit();
+  });
+
+  afterEach(async () => {
+    await db.db.delete(refreshTokens);
   });
 
   afterAll(async () => {

@@ -39,6 +39,21 @@ async function bootstrap() {
   app.useGlobalPipes(new ZodValidationPipe());
   app.useGlobalFilters(new AllExceptionsFilter());
 
+  if (process.env.NODE_ENV === 'production') {
+    await app.register(fastifyStatic, {
+      root: join(__dirname, '..', '..', 'public'),
+      prefix: '/',
+      decorateReply: false,
+    });
+
+    const instance = app.getHttpAdapter().getInstance() as import('fastify').FastifyInstance;
+    instance.setNotFoundHandler(
+      (_request: import('fastify').FastifyRequest, reply: import('fastify').FastifyReply) => {
+        reply.sendFile('index.html');
+      },
+    );
+  }
+
   const config = new DocumentBuilder()
     .setTitle('Nutrigest API')
     .setDescription('API de controle de estoque nutricional')
