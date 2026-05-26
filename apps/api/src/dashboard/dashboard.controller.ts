@@ -9,13 +9,17 @@ import { ChartsQueryDto } from './dto/charts-query.dto';
 import { ConsumptionReportDto } from './dto/consumption-report.dto';
 import { MealRankingDto } from './dto/meal-ranking.dto';
 import { StockHistoryDto } from './dto/stock-history.dto';
+import { PdfService } from './pdf.service';
 
 @ApiTags('Dashboard')
 @Controller('dashboard')
 @UseGuards(AuthGuard('jwt'), RolesGuard)
 @ApiBearerAuth()
 export class DashboardController {
-  constructor(private dashboardService: DashboardService) {}
+  constructor(
+    private dashboardService: DashboardService,
+    private pdfService: PdfService,
+  ) {}
 
   @Get('summary')
   @Roles('ADMIN', 'TECHNICIAN')
@@ -95,6 +99,60 @@ export class DashboardController {
       'attachment; filename="stock-history.csv"',
     );
     return res.send(csv);
+  }
+
+  // -- PDF --
+
+  @Get('consumption-by-room/pdf')
+  @Roles('ADMIN', 'TECHNICIAN')
+  @ApiOperation({ summary: 'Export consumption by room as PDF' })
+  async getConsumptionByRoomPdf(
+    @Query() dto: ConsumptionReportDto,
+    @Res() res: FastifyReply,
+  ) {
+    const data = await this.dashboardService.getConsumptionByRoom(dto);
+    const pdf = await this.pdfService.generateConsumptionByRoomPdf(data);
+    res.header('Content-Type', 'application/pdf');
+    res.header(
+      'Content-Disposition',
+      'attachment; filename="consumption-by-room.pdf"',
+    );
+    return res.send(pdf);
+  }
+
+  @Get('meal-ranking/pdf')
+  @Roles('ADMIN', 'TECHNICIAN')
+  @ApiOperation({ summary: 'Export meal ranking as PDF' })
+  async getMealRankingPdf(
+    @Query() dto: MealRankingDto,
+    @Res() res: FastifyReply,
+  ) {
+    const data = await this.dashboardService.getMealRanking(dto);
+    const pdf = await this.pdfService.generateMealRankingPdf(data);
+    res.header('Content-Type', 'application/pdf');
+    res.header(
+      'Content-Disposition',
+      'attachment; filename="meal-ranking.pdf"',
+    );
+    return res.send(pdf);
+  }
+
+  @Get('stock-history/:productId/pdf')
+  @Roles('ADMIN', 'TECHNICIAN')
+  @ApiOperation({ summary: 'Export stock history as PDF' })
+  async getStockHistoryPdf(
+    @Param('productId') productId: string,
+    @Query() dto: StockHistoryDto,
+    @Res() res: FastifyReply,
+  ) {
+    const data = await this.dashboardService.getStockHistory(productId, dto);
+    const pdf = await this.pdfService.generateStockHistoryPdf(data);
+    res.header('Content-Type', 'application/pdf');
+    res.header(
+      'Content-Disposition',
+      'attachment; filename="stock-history.pdf"',
+    );
+    return res.send(pdf);
   }
 
   // -- Charts --
