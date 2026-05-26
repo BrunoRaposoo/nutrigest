@@ -1,22 +1,21 @@
 import 'dotenv/config';
 
+import { existsSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import fastifyMultipart from '@fastify/multipart';
 import fastifyStatic from '@fastify/static';
 import { NestFactory } from '@nestjs/core';
-import {
-  FastifyAdapter,
-  type NestFastifyApplication,
-} from '@nestjs/platform-fastify';
+import { type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { AppModule } from './app.module';
+import { NutrigestFastifyAdapter } from './common/adapters/nutrigest-fastify.adapter';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
-    new FastifyAdapter({ logger: true }),
+    new NutrigestFastifyAdapter({ logger: true }),
   );
 
   app.enableCors({
@@ -24,8 +23,12 @@ async function bootstrap() {
     credentials: true,
   });
 
+  const uploadsDir = join(process.cwd(), process.env.UPLOAD_DIR || 'uploads');
+  if (!existsSync(uploadsDir)) {
+    mkdirSync(uploadsDir, { recursive: true });
+  }
   app.register(fastifyStatic, {
-    root: join(__dirname, '..', process.env.UPLOAD_DIR || 'uploads'),
+    root: uploadsDir,
     prefix: '/uploads/',
     decorateReply: false,
   });
@@ -51,10 +54,20 @@ async function bootstrap() {
       .getInstance() as import('fastify').FastifyInstance;
     instance.setNotFoundHandler(
       (
-        _request: import('fastify').FastifyRequest,
+        request: import('fastify').FastifyRequest,
         reply: import('fastify').FastifyReply,
       ) => {
-        reply.sendFile('index.html');
+        if (
+          request.url.startsWith('/api') ||
+          request.url.startsWith('/uploads')
+        ) {
+          return reply.code(404).send({
+            statusCode: 404,
+            message: `Route ${request.method} ${request.url} not found`,
+            error: 'Not Found',
+          });
+        }
+        return reply.sendFile('index.html');
       },
     );
   }
