@@ -39,6 +39,7 @@ export default function CentralStock() {
   const [adjustQty, setAdjustQty] = useState(0);
 
   const openAdjust = (item: CentralStockItem) => {
+    updateMutation.reset();
     setAdjustProduct(item);
     setAdjustQty(item.quantity);
   };
