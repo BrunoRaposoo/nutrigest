@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { api } from '../lib/api';
+import { getApiErrorMessage } from '../lib/api-error';
 
 interface UseDownloadReportResult {
   download: () => Promise<void>;
@@ -35,9 +36,7 @@ export function useDownloadReport(
       document.body.removeChild(link);
       URL.revokeObjectURL(link.href);
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Erro ao baixar relatório';
-      setError(message);
+      setError(getApiErrorMessage(err) || 'Erro ao baixar relatório');
     } finally {
       setIsDownloading(false);
     }

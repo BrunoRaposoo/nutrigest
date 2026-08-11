@@ -11,6 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from '../../components/ui/card';
+import { ErrorBanner } from '../../components/ui/error-banner';
 import { Input } from '../../components/ui/input';
 import { Skeleton } from '../../components/ui/skeleton';
 import { useMinibarStandard } from '../../hooks/queries/use-minibar-queries';
@@ -21,6 +22,7 @@ import {
   useMovements,
 } from '../../hooks/queries/use-movement-queries';
 import { useProducts } from '../../hooks/queries/use-product-queries';
+import { getApiErrorMessage } from '../../lib/api-error';
 import { cn, formatDate } from '../../lib/utils';
 
 type Tab = 'list' | 'in' | 'rooms' | 'meals';
@@ -317,6 +319,12 @@ export default function StockMovements() {
             <CardTitle>Entrada de Mercadorias</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {createIn.isError && (
+              <ErrorBanner
+                message={getApiErrorMessage(createIn.error)}
+                onDismiss={() => createIn.reset()}
+              />
+            )}
             {inItems.map((item) => (
               <div
                 key={item.id}
@@ -394,6 +402,13 @@ export default function StockMovements() {
           </CardHeader>
           <CardContent className="space-y-6">
             <RoomSelect value={selectedRoom} onChange={handleRoomChange} />
+
+            {createReplenish.isError && (
+              <ErrorBanner
+                message={getApiErrorMessage(createReplenish.error)}
+                onDismiss={() => createReplenish.reset()}
+              />
+            )}
 
             {selectedRoom ? (
               roomProducts.length > 0 ? (
@@ -480,6 +495,12 @@ export default function StockMovements() {
             <CardTitle>Retirada de Marmitas</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {createMealOut.isError && (
+              <ErrorBanner
+                message={getApiErrorMessage(createMealOut.error)}
+                onDismiss={() => createMealOut.reset()}
+              />
+            )}
             <div>
               <div className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
                 Produto

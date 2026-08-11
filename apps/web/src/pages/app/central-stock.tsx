@@ -4,10 +4,12 @@ import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent } from '../../components/ui/card';
 import { Dialog } from '../../components/ui/dialog';
+import { ErrorBanner } from '../../components/ui/error-banner';
 import { Input } from '../../components/ui/input';
 import { Skeleton } from '../../components/ui/skeleton';
 import { useAuth } from '../../contexts/auth-context';
 import { api } from '../../lib/api';
+import { getApiErrorMessage } from '../../lib/api-error';
 import type { CentralStockItem } from '../../types/stock';
 
 export default function CentralStock() {
@@ -37,6 +39,7 @@ export default function CentralStock() {
   const [adjustQty, setAdjustQty] = useState(0);
 
   const openAdjust = (item: CentralStockItem) => {
+    updateMutation.reset();
     setAdjustProduct(item);
     setAdjustQty(item.quantity);
   };
@@ -136,6 +139,12 @@ export default function CentralStock() {
       >
         {adjustProduct && (
           <div className="space-y-4">
+            {updateMutation.isError && (
+              <ErrorBanner
+                message={getApiErrorMessage(updateMutation.error)}
+                onDismiss={() => updateMutation.reset()}
+              />
+            )}
             <p className="text-sm text-gray-500 dark:text-gray-400">
               {adjustProduct.productName}
             </p>
