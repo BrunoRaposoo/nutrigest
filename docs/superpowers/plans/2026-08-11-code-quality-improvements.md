@@ -37,7 +37,7 @@
 | Etapa | Branch | Problemas | Status |
 |---|---|---|---|
 | 1 | `fix/security-register-and-jwt` | Crítica 1 + Crítica 5 | ⬜ pendente |
-| 2 | `fix/frontend-error-handling` | Crítica 2 | ⬜ pendente |
+| 2 | `fix/frontend-error-handling` | Crítica 2 | ✅ concluída |
 | 3 | `fix/stock-atomicity` | Crítica 3 | ⬜ pendente |
 | 4 | `fix/auth-refresh-and-rate-limit` | Crítica 4 + Moderadas 6, 7, 8 | ⬜ pendente |
 | 5 | `fix/db-indexes-and-data-integrity` | Moderadas 9, 10, 12, 14, 15 | ⬜ pendente |
@@ -126,12 +126,12 @@ Criar um helper único de extração de mensagem de erro e um banner de erro reu
 
 ## Passos de execução
 
-- [ ] **Passo 1 — TDD:** escrever testes para `getApiErrorMessage` (string, array, sem resposta, rede) e `ErrorBanner` (renderiza mensagem). Rodar e ver falhar.
-- [ ] **Passo 2 — Implementar:** criar helper + componente.
-- [ ] **Passo 3 — Aplicar:** adicionar estado de erro + try/catch em `stock-movements.tsx` (IN/Replenish/Meal), `central-stock.tsx`, `products.tsx`, `users.tsx`; renderizar `ErrorBanner`.
-- [ ] **Passo 4 — Dashboard:** exibir erro de download dos relatórios.
-- [ ] **Passo 5 — Verificar:** `pnpm --filter @nutrigest/web test`, `pnpm lint`, `pnpm build:web`.
-- [ ] **Passo 6 — Commit:** commits atômicos (`feat:` helper/component, `fix:` por página).
+- [x] **Passo 1 — TDD:** escrever testes para `getApiErrorMessage` (string, array, sem resposta, rede) e `ErrorBanner` (renderiza mensagem). Rodar e ver falhar.
+- [x] **Passo 2 — Implementar:** criar helper + componente.
+- [x] **Passo 3 — Aplicar:** adicionar estado de erro + try/catch em `stock-movements.tsx` (IN/Replenish/Meal), `central-stock.tsx`, `products.tsx`, `users.tsx`; renderizar `ErrorBanner`.
+- [x] **Passo 4 — Dashboard:** exibir erro de download dos relatórios.
+- [x] **Passo 5 — Verificar:** `pnpm --filter @nutrigest/web test`, `pnpm lint`, `pnpm build:web`.
+- [x] **Passo 6 — Commit:** commits atômicos (`feat:` helper/component, `fix:` por página).
 - [ ] **Passo 7 — Usuário testa manualmente; autoriza push + PR.**
 
 ---
