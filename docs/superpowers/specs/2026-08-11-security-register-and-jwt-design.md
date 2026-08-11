@@ -47,22 +47,23 @@ usuário será criado como `OPERATOR`.
 
 ### 2. Validação centralizada do JWT_SECRET
 
-Novo `apps/api/src/config/env.ts`:
+Novo `apps/api/src/config/env.ts` (função em vez de const avaliado no import,
+para testabilidade via manipulação de `process.env`):
 
 ```ts
-export const JWT_SECRET = (() => {
+export function getJwtSecret(): string {
   const secret = process.env.JWT_SECRET;
   const isProd = process.env.NODE_ENV === 'production';
   if (isProd && (!secret || secret === 'dev-secret' || secret.length < 32)) {
     throw new Error('JWT_SECRET must be set to a strong secret in production');
   }
   return secret ?? 'dev-secret';
-})();
+}
 ```
 
 Aplicar:
-- `apps/api/src/auth/auth.module.ts:12` → `secret: JWT_SECRET`
-- `apps/api/src/auth/strategies/jwt.strategy.ts:20` → `secretOrKey: JWT_SECRET`
+- `apps/api/src/auth/auth.module.ts:12` → `secret: getJwtSecret()`
+- `apps/api/src/auth/strategies/jwt.strategy.ts:20` → `secretOrKey: getJwtSecret()`
 
 Observações:
 - Em testes, `.env.test` define `JWT_SECRET=test-secret` e `NODE_ENV` não é
@@ -144,9 +145,8 @@ Em cada spec, no `beforeAll` (após `app` criado), obter `db` via
 - Não lança em dev/test sem `JWT_SECRET` (retorna `'dev-secret'`).
 - Não lança em produção com segredo forte.
 
-Nota: como `JWT_SECRET` é avaliado no import do módulo, os testes devem
-manipular `process.env` e re-importar o módulo com `jest.resetModules()` +
-`require` para isolar cada caso.
+Nota: por ser uma função, `env.spec.ts` manipula `process.env` diretamente em
+cada caso, sem necessidade de `jest.resetModules()`.
 
 **Unit `apps/api/src/auth/auth.service.spec.ts`:**
 - Remover `role: 'OPERATOR'` da chamada em `register` (linha ~40).
