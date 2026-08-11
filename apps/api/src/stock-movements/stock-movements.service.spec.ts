@@ -1,5 +1,6 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
+import { eq } from 'drizzle-orm';
 import { CentralStockService } from '../central-stock/central-stock.service';
 import { DbService } from '../db/db.service';
 import { products } from '../db/schema/products';
@@ -97,6 +98,24 @@ describe('StockMovementsService', () => {
           userId,
         ),
       ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should not lose updates under concurrent IN movements', async () => {
+      const productId = await getAnyProductId();
+      const userId = await getAnyUserId();
+      if (!productId || !userId) return;
+
+      const before = await centralStock.getQuantity(productId);
+      const results = await Promise.allSettled(
+        Array.from({ length: 20 }, () =>
+          service.createIn({ items: [{ productId, quantity: 1 }] }, userId),
+        ),
+      );
+      const succeeded = results.filter((r) => r.status === 'fulfilled').length;
+      const after = await centralStock.getQuantity(productId);
+
+      expect(succeeded).toBe(20);
+      expect(after).toBe(before + 20);
     });
   });
 

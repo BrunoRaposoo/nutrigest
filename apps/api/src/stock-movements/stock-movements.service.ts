@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { and, desc, eq, gte, lte } from 'drizzle-orm';
+import { and, desc, eq, gte, lte, sql } from 'drizzle-orm';
 import { CentralStockService } from '../central-stock/central-stock.service';
 import { DbService } from '../db/db.service';
 import { centralStock } from '../db/schema/central-stock';
@@ -216,20 +216,15 @@ export class StockMovementsService {
 
   // biome-ignore lint/suspicious/noExplicitAny: Drizzle transaction type
   private async upsertCentralStock(tx: any, productId: string, delta: number) {
-    const [current] = await tx
-      .select({ quantity: centralStock.quantity })
-      .from(centralStock)
-      .where(eq(centralStock.productId, productId))
-      .limit(1);
-
-    const newQuantity = (current?.quantity ?? 0) + delta;
-
     await tx
       .insert(centralStock)
-      .values({ productId, quantity: newQuantity })
+      .values({ productId, quantity: sql`GREATEST(${delta}, 0)` })
       .onConflictDoUpdate({
         target: centralStock.productId,
-        set: { quantity: newQuantity, updatedAt: new Date() },
+        set: {
+          quantity: sql`${centralStock.quantity} + ${delta}`,
+          updatedAt: new Date(),
+        },
       });
   }
 }
