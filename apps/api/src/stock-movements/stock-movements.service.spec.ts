@@ -139,23 +139,73 @@ describe('StockMovementsService', () => {
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('should throw BadRequestException if insufficient stock', async () => {
-      const productId = await getAnyProductId();
+    it('should throw BadRequestException with product name if insufficient stock', async () => {
+      const [product] = await db.db
+        .select({ id: products.id, name: products.name })
+        .from(products)
+        .limit(1);
       const userId = await getAnyUserId();
-      if (!productId || !userId) return;
+      if (!product || !userId) return;
 
       // Set stock to very low
-      await centralStock.update(productId, { quantity: 2 });
+      await centralStock.update(product.id, { quantity: 2 });
 
       await expect(
         service.createReplenish(
           101,
           {
-            items: [{ productId, consumedQuantity: 0, restockedQuantity: 10 }],
+            items: [
+              {
+                productId: product.id,
+                consumedQuantity: 0,
+                restockedQuantity: 10,
+              },
+            ],
           },
           userId,
         ),
-      ).rejects.toThrow(BadRequestException);
+      ).rejects.toMatchObject({
+        response: {
+          message: expect.stringContaining(product.name) as string,
+        },
+      });
+    });
+
+    it('should not expose product id in insufficient stock message', async () => {
+      const [product] = await db.db
+        .select({ id: products.id, name: products.name })
+        .from(products)
+        .limit(1);
+      const userId = await getAnyUserId();
+      if (!product || !userId) return;
+
+      await centralStock.update(product.id, { quantity: 2 });
+
+      const error = await service
+        .createReplenish(
+          101,
+          {
+            items: [
+              {
+                productId: product.id,
+                consumedQuantity: 0,
+                restockedQuantity: 10,
+              },
+            ],
+          },
+          userId,
+        )
+        .catch((e: Error) => e);
+
+      expect(error).toBeInstanceOf(BadRequestException);
+      const response = (error as BadRequestException).getResponse();
+      const message =
+        typeof response === 'string'
+          ? response
+          : (response as { message: string }).message;
+      expect(message).not.toContain(product.id);
+      expect(message).not.toContain('Insufficient');
+      expect(message).toContain('Estoque insuficiente');
     });
 
     it('should create only CONSUMPTION when restockedQuantity is 0', async () => {
@@ -227,6 +277,35 @@ describe('StockMovementsService', () => {
           userId,
         ),
       ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should use Portuguese message with product name if insufficient stock', async () => {
+      const [product] = await db.db
+        .select({ id: products.id, name: products.name })
+        .from(products)
+        .limit(1);
+      const userId = await getAnyUserId();
+      if (!product || !userId) return;
+
+      await centralStock.update(product.id, { quantity: 1 });
+
+      const error = await service
+        .createMealOut(
+          { productId: product.id, quantity: 5, description: 'test' },
+          userId,
+        )
+        .catch((e: Error) => e);
+
+      expect(error).toBeInstanceOf(BadRequestException);
+      const response = (error as BadRequestException).getResponse();
+      const message =
+        typeof response === 'string'
+          ? response
+          : (response as { message: string }).message;
+      expect(message).toContain(product.name);
+      expect(message).not.toContain(product.id);
+      expect(message).not.toContain('Insufficient');
+      expect(message).toContain('Estoque insuficiente');
     });
 
     it('should throw NotFoundException for non-existent product', async () => {

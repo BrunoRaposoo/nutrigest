@@ -65,12 +65,12 @@ export class StockMovementsService {
     }
 
     for (const item of dto.items) {
-      await this.ensureProductExists(item.productId);
+      const product = await this.ensureProductExists(item.productId);
       if (item.restockedQuantity > 0) {
         const qty = await this.centralStockService.getQuantity(item.productId);
         if (qty < item.restockedQuantity) {
           throw new BadRequestException(
-            `Insufficient stock for product ${item.productId}: available ${qty}, required ${item.restockedQuantity}`,
+            `Estoque insuficiente para ${product.name}: disponível ${qty}, necessário ${item.restockedQuantity}`,
           );
         }
       }
@@ -123,12 +123,12 @@ export class StockMovementsService {
   }
 
   async createMealOut(dto: CreateMealOutMovementData, userId: string) {
-    await this.ensureProductExists(dto.productId);
+    const product = await this.ensureProductExists(dto.productId);
 
     const qty = await this.centralStockService.getQuantity(dto.productId);
     if (qty < dto.quantity) {
       throw new BadRequestException(
-        `Insufficient stock: available ${qty}, required ${dto.quantity}`,
+        `Estoque insuficiente para ${product.name}: disponível ${qty}, necessário ${dto.quantity}`,
       );
     }
 
@@ -210,6 +210,8 @@ export class StockMovementsService {
     if (!product) {
       throw new NotFoundException('Product not found');
     }
+
+    return product;
   }
 
   // biome-ignore lint/suspicious/noExplicitAny: Drizzle transaction type
