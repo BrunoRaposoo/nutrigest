@@ -9,6 +9,7 @@ import {
 import { Test, type TestingModule } from '@nestjs/testing';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { AppModule } from './../src/app.module';
+import { registerAndLogin } from './helpers/auth.helper';
 
 function buildMultipartBody(
   filename: string,
@@ -63,26 +64,6 @@ describe('Products (e2e)', () => {
     await app.close();
   });
 
-  async function registerAndLogin(
-    role: 'ADMIN' | 'TECHNICIAN' | 'OPERATOR' = 'OPERATOR',
-  ) {
-    const email = `e2e-prod-${role}-${Date.now()}-${Math.random()}@example.com`;
-
-    await app.inject({
-      method: 'POST',
-      url: '/auth/register',
-      payload: { name: `${role} User`, email, password: 'password123', role },
-    });
-
-    const loginRes = await app.inject({
-      method: 'POST',
-      url: '/auth/login',
-      payload: { email, password: 'password123' },
-    });
-
-    return JSON.parse(loginRes.body);
-  }
-
   describe('/products (GET) - list', () => {
     it('should reject unauthenticated', async () => {
       const res = await app.inject({ method: 'GET', url: '/products' });
@@ -90,7 +71,7 @@ describe('Products (e2e)', () => {
     });
 
     it('should list products for OPERATOR', async () => {
-      const { accessToken } = await registerAndLogin('OPERATOR');
+      const { accessToken } = await registerAndLogin(app, 'OPERATOR');
 
       const res = await app.inject({
         method: 'GET',
@@ -105,7 +86,7 @@ describe('Products (e2e)', () => {
 
   describe('/products (POST) - create', () => {
     it('should create product as ADMIN', async () => {
-      const { accessToken } = await registerAndLogin('ADMIN');
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
 
       const res = await app.inject({
         method: 'POST',
@@ -121,7 +102,7 @@ describe('Products (e2e)', () => {
     });
 
     it('should create product as TECHNICIAN', async () => {
-      const { accessToken } = await registerAndLogin('TECHNICIAN');
+      const { accessToken } = await registerAndLogin(app, 'TECHNICIAN');
 
       const res = await app.inject({
         method: 'POST',
@@ -134,7 +115,7 @@ describe('Products (e2e)', () => {
     });
 
     it('should reject create as OPERATOR', async () => {
-      const { accessToken } = await registerAndLogin('OPERATOR');
+      const { accessToken } = await registerAndLogin(app, 'OPERATOR');
 
       const res = await app.inject({
         method: 'POST',
@@ -147,7 +128,7 @@ describe('Products (e2e)', () => {
     });
 
     it('should validate required fields', async () => {
-      const { accessToken } = await registerAndLogin('ADMIN');
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
 
       const res = await app.inject({
         method: 'POST',
@@ -162,7 +143,7 @@ describe('Products (e2e)', () => {
 
   describe('/products/:id (GET) - get one', () => {
     it('should get product by id', async () => {
-      const { accessToken } = await registerAndLogin('ADMIN');
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
 
       const createRes = await app.inject({
         method: 'POST',
@@ -183,7 +164,7 @@ describe('Products (e2e)', () => {
     });
 
     it('should return 404 for non-existent id', async () => {
-      const { accessToken } = await registerAndLogin('ADMIN');
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
 
       const res = await app.inject({
         method: 'GET',
@@ -197,7 +178,7 @@ describe('Products (e2e)', () => {
 
   describe('/products/:id (PATCH) - update', () => {
     it('should update product as ADMIN', async () => {
-      const { accessToken } = await registerAndLogin('ADMIN');
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
 
       const createRes = await app.inject({
         method: 'POST',
@@ -219,8 +200,8 @@ describe('Products (e2e)', () => {
     });
 
     it('should reject update as OPERATOR', async () => {
-      const admin = await registerAndLogin('ADMIN');
-      const operator = await registerAndLogin('OPERATOR');
+      const admin = await registerAndLogin(app, 'ADMIN');
+      const operator = await registerAndLogin(app, 'OPERATOR');
 
       const createRes = await app.inject({
         method: 'POST',
@@ -243,7 +224,7 @@ describe('Products (e2e)', () => {
 
   describe('/products/:id (DELETE) - delete', () => {
     it('should delete product as ADMIN', async () => {
-      const { accessToken } = await registerAndLogin('ADMIN');
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
 
       const createRes = await app.inject({
         method: 'POST',
@@ -271,7 +252,7 @@ describe('Products (e2e)', () => {
     });
 
     it('should reject delete as TECHNICIAN', async () => {
-      const { accessToken } = await registerAndLogin('TECHNICIAN');
+      const { accessToken } = await registerAndLogin(app, 'TECHNICIAN');
 
       const res = await app.inject({
         method: 'DELETE',
@@ -283,7 +264,7 @@ describe('Products (e2e)', () => {
     });
 
     it('should reject delete when stock > 0', async () => {
-      const { accessToken } = await registerAndLogin('ADMIN');
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
 
       const createRes = await app.inject({
         method: 'POST',
@@ -319,7 +300,7 @@ describe('Products (e2e)', () => {
 
   describe('/products/:id/image (POST) - upload image', () => {
     it('should upload image as ADMIN', async () => {
-      const { accessToken } = await registerAndLogin('ADMIN');
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
 
       const createRes = await app.inject({
         method: 'POST',
@@ -347,7 +328,7 @@ describe('Products (e2e)', () => {
     });
 
     it('should upload image as TECHNICIAN', async () => {
-      const { accessToken } = await registerAndLogin('TECHNICIAN');
+      const { accessToken } = await registerAndLogin(app, 'TECHNICIAN');
 
       const createRes = await app.inject({
         method: 'POST',
@@ -373,8 +354,8 @@ describe('Products (e2e)', () => {
     });
 
     it('should reject upload as OPERATOR', async () => {
-      const admin = await registerAndLogin('ADMIN');
-      const operator = await registerAndLogin('OPERATOR');
+      const admin = await registerAndLogin(app, 'ADMIN');
+      const operator = await registerAndLogin(app, 'OPERATOR');
 
       const createRes = await app.inject({
         method: 'POST',
@@ -400,7 +381,7 @@ describe('Products (e2e)', () => {
     });
 
     it('should return 404 for non-existent product', async () => {
-      const { accessToken } = await registerAndLogin('ADMIN');
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
 
       const { body, boundary } = buildMultipartBody('test.png', 'image/png');
 
@@ -418,7 +399,7 @@ describe('Products (e2e)', () => {
     });
 
     it('should reject invalid file type', async () => {
-      const { accessToken } = await registerAndLogin('ADMIN');
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
 
       const createRes = await app.inject({
         method: 'POST',
@@ -449,7 +430,7 @@ describe('Products (e2e)', () => {
 
   describe('/products/:id/image (DELETE) - delete image', () => {
     it('should delete product image', async () => {
-      const { accessToken } = await registerAndLogin('ADMIN');
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
 
       const createRes = await app.inject({
         method: 'POST',
@@ -483,7 +464,7 @@ describe('Products (e2e)', () => {
     });
 
     it('should return 404 for non-existent product', async () => {
-      const { accessToken } = await registerAndLogin('ADMIN');
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
 
       const res = await app.inject({
         method: 'DELETE',

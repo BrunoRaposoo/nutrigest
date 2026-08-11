@@ -5,6 +5,7 @@ import {
 import { Test, type TestingModule } from '@nestjs/testing';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { AppModule } from './../src/app.module';
+import { registerAndLogin } from './helpers/auth.helper';
 
 describe('Users (e2e)', () => {
   let app: NestFastifyApplication;
@@ -26,26 +27,6 @@ describe('Users (e2e)', () => {
     await app.close();
   });
 
-  async function registerAndLogin(
-    role: 'ADMIN' | 'TECHNICIAN' | 'OPERATOR' = 'OPERATOR',
-  ) {
-    const email = `e2e-${role}-${Date.now()}-${Math.random()}@example.com`;
-
-    await app.inject({
-      method: 'POST',
-      url: '/auth/register',
-      payload: { name: `${role} User`, email, password: 'password123', role },
-    });
-
-    const loginRes = await app.inject({
-      method: 'POST',
-      url: '/auth/login',
-      payload: { email, password: 'password123' },
-    });
-
-    return JSON.parse(loginRes.body);
-  }
-
   describe('/users (GET) - list users', () => {
     it('should reject unauthenticated request', async () => {
       const res = await app.inject({ method: 'GET', url: '/users' });
@@ -53,7 +34,7 @@ describe('Users (e2e)', () => {
     });
 
     it('should reject non-admin user', async () => {
-      const { accessToken } = await registerAndLogin('OPERATOR');
+      const { accessToken } = await registerAndLogin(app, 'OPERATOR');
 
       const res = await app.inject({
         method: 'GET',
@@ -65,7 +46,7 @@ describe('Users (e2e)', () => {
     });
 
     it('should list users for admin', async () => {
-      const { accessToken } = await registerAndLogin('ADMIN');
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
 
       const res = await app.inject({
         method: 'GET',
@@ -86,7 +67,7 @@ describe('Users (e2e)', () => {
 
   describe('/users/:id (GET) - get user', () => {
     it('should get user by id as admin', async () => {
-      const admin = await registerAndLogin('ADMIN');
+      const admin = await registerAndLogin(app, 'ADMIN');
 
       const listRes = await app.inject({
         method: 'GET',
@@ -108,7 +89,7 @@ describe('Users (e2e)', () => {
     });
 
     it('should return 404 for non-existent id', async () => {
-      const { accessToken } = await registerAndLogin('ADMIN');
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
 
       const res = await app.inject({
         method: 'GET',
@@ -122,7 +103,7 @@ describe('Users (e2e)', () => {
 
   describe('/users (POST) - create user', () => {
     it('should create user as admin', async () => {
-      const { accessToken } = await registerAndLogin('ADMIN');
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
 
       const res = await app.inject({
         method: 'POST',
@@ -144,7 +125,7 @@ describe('Users (e2e)', () => {
     });
 
     it('should reject duplicate email', async () => {
-      const { accessToken } = await registerAndLogin('ADMIN');
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
       const email = `e2e-create-dup-${Date.now()}@example.com`;
 
       await app.inject({
@@ -167,7 +148,7 @@ describe('Users (e2e)', () => {
 
   describe('/users/:id (PATCH) - update user', () => {
     it('should update user name as admin', async () => {
-      const admin = await registerAndLogin('ADMIN');
+      const admin = await registerAndLogin(app, 'ADMIN');
 
       const createRes = await app.inject({
         method: 'POST',
@@ -196,7 +177,7 @@ describe('Users (e2e)', () => {
 
   describe('/users/:id (DELETE) - delete user', () => {
     it('should delete user as admin', async () => {
-      const admin = await registerAndLogin('ADMIN');
+      const admin = await registerAndLogin(app, 'ADMIN');
 
       const createRes = await app.inject({
         method: 'POST',
@@ -231,7 +212,7 @@ describe('Users (e2e)', () => {
 
   describe('RBAC - role-based access', () => {
     it('should reject OPERATOR from listing users', async () => {
-      const { accessToken } = await registerAndLogin('OPERATOR');
+      const { accessToken } = await registerAndLogin(app, 'OPERATOR');
 
       const res = await app.inject({
         method: 'GET',
@@ -243,7 +224,7 @@ describe('Users (e2e)', () => {
     });
 
     it('should reject TECHNICIAN from creating users', async () => {
-      const { accessToken } = await registerAndLogin('TECHNICIAN');
+      const { accessToken } = await registerAndLogin(app, 'TECHNICIAN');
 
       const res = await app.inject({
         method: 'POST',
