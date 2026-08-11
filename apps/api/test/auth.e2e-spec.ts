@@ -42,6 +42,23 @@ describe('Auth (e2e)', () => {
     expect(body).toHaveProperty('id');
   });
 
+  it('/auth/register (POST) - ignores role escalation attempt', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/auth/register',
+      payload: {
+        name: 'Escalation Attempt',
+        email: `e2e-escalation-${Date.now()}@example.com`,
+        password: 'password123',
+        role: 'ADMIN',
+      },
+    });
+
+    expect(res.statusCode).toBe(201);
+    const body = JSON.parse(res.body);
+    expect(body.role).toBe('OPERATOR');
+  });
+
   it('/auth/register (POST) - duplicate email', async () => {
     const email = `e2e-dup-${Date.now()}@example.com`;
 

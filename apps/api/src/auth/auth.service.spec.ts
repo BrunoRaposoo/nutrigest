@@ -37,13 +37,22 @@ describe('AuthService', () => {
       name: 'Test User',
       email: `test-${Date.now()}@example.com`,
       password: 'password123',
-      role: 'OPERATOR',
     });
 
     expect(result).toHaveProperty('id');
     expect(result.email).toContain('test-');
     expect(result.role).toBe('OPERATOR');
     expect(result).not.toHaveProperty('passwordHash');
+  });
+
+  it('should always register users with OPERATOR role', async () => {
+    const result = await service.register({
+      name: 'Role Escalation',
+      email: `role-${Date.now()}@example.com`,
+      password: 'password123',
+    });
+
+    expect(result.role).toBe('OPERATOR');
   });
 
   it('should reject duplicate email', async () => {
