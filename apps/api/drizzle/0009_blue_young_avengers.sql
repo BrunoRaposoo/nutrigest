@@ -1,0 +1,1 @@
+ALTER TABLE "central_stock" ADD CONSTRAINT "central_stock_quantity_nonnegative" CHECK ("central_stock"."quantity" >= 0);
