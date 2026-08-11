@@ -13,6 +13,7 @@ import {
 import { Input } from '../../components/ui/input';
 import { PasswordInput } from '../../components/ui/password-input';
 import { useAuth } from '../../contexts/auth-context';
+import { getApiErrorMessage } from '../../lib/api-error';
 
 const loginSchema = z.object({
   email: z.string().email('E-mail inválido'),
@@ -42,12 +43,7 @@ export default function Login() {
       await login(data.email, data.password);
       navigate('/app/dashboard');
     } catch (err: unknown) {
-      const msg =
-        err && typeof err === 'object' && 'response' in err
-          ? ((err as { response: { data: { message: string } } }).response?.data
-              ?.message ?? 'E-mail ou senha inválidos')
-          : 'E-mail ou senha inválidos';
-      setError(msg);
+      setError(getApiErrorMessage(err) || 'E-mail ou senha inválidos');
     }
   };
 

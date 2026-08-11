@@ -3,9 +3,11 @@ import { useState } from 'react';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent } from '../../components/ui/card';
 import { Dialog } from '../../components/ui/dialog';
+import { ErrorBanner } from '../../components/ui/error-banner';
 import { Input } from '../../components/ui/input';
 import { useAuth } from '../../contexts/auth-context';
 import { api } from '../../lib/api';
+import { getApiErrorMessage } from '../../lib/api-error';
 import { cn } from '../../lib/utils';
 import type { MinibarItem } from '../../types/stock';
 
@@ -55,6 +57,7 @@ export default function MinibarStandard() {
   const [selectedProductId, setSelectedProductId] = useState('');
   const [addQty, setAddQty] = useState(1);
   const [error, setError] = useState('');
+  const [deleteError, setDeleteError] = useState('');
 
   const handleAdd = async () => {
     if (!selectedProductId) return;
@@ -68,21 +71,17 @@ export default function MinibarStandard() {
       setSelectedProductId('');
       setAddQty(1);
     } catch (err: unknown) {
-      const msg =
-        err && typeof err === 'object' && 'response' in err
-          ? ((err as { response: { data: { message: string } } }).response?.data
-              ?.message ?? 'Erro ao adicionar item')
-          : 'Erro ao adicionar item';
-      setError(msg);
+      setError(getApiErrorMessage(err) || 'Erro ao adicionar item');
     }
   };
 
   const handleDelete = async (productId: string) => {
     if (!window.confirm('Remover item do padrão?')) return;
+    setDeleteError('');
     try {
       await deleteMutation.mutateAsync(productId);
-    } catch {
-      alert('Erro ao remover item');
+    } catch (err) {
+      setDeleteError(getApiErrorMessage(err) || 'Erro ao remover item');
     }
   };
 
@@ -92,6 +91,12 @@ export default function MinibarStandard() {
 
   return (
     <div className="space-y-6 transition-theme">
+      {deleteError && (
+        <ErrorBanner
+          message={deleteError}
+          onDismiss={() => setDeleteError('')}
+        />
+      )}
       <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
         Padrão Frigobar
       </h1>
@@ -186,9 +191,7 @@ export default function MinibarStandard() {
       <Dialog open={addOpen} onOpenChange={setAddOpen} title="Adicionar Item">
         <div className="space-y-4">
           {error && (
-            <div className="rounded-lg bg-red-50 dark:bg-red-900/20 p-3 text-sm text-red-600 dark:text-red-400">
-              {error}
-            </div>
+            <ErrorBanner message={error} onDismiss={() => setError('')} />
           )}
           <div>
             <label
