@@ -18,6 +18,8 @@ async function bootstrap() {
     new NutrigestFastifyAdapter({ logger: true }),
   );
 
+  app.setGlobalPrefix('api');
+
   app.enableCors({
     origin: process.env.CORS_ORIGIN ?? 'http://localhost:5173',
     credentials: true,
