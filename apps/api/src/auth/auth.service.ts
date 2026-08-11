@@ -43,7 +43,7 @@ export class AuthService {
         name: dto.name,
         email: dto.email,
         passwordHash,
-        role: dto.role,
+        role: 'OPERATOR',
       })
       .returning({
         id: users.id,
