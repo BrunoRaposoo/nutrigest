@@ -5,6 +5,7 @@ import {
 import { Test, type TestingModule } from '@nestjs/testing';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { AppModule } from './../src/app.module';
+import { registerAndLogin } from './helpers/auth.helper';
 
 describe('Dashboard (e2e)', () => {
   let app: NestFastifyApplication;
@@ -25,26 +26,6 @@ describe('Dashboard (e2e)', () => {
   afterAll(async () => {
     await app.close();
   });
-
-  async function registerAndLogin(
-    role: 'ADMIN' | 'TECHNICIAN' | 'OPERATOR' = 'OPERATOR',
-  ) {
-    const email = `e2e-db-${role}-${Date.now()}-${Math.random()}@example.com`;
-
-    await app.inject({
-      method: 'POST',
-      url: '/auth/register',
-      payload: { name: `${role} User`, email, password: 'password123', role },
-    });
-
-    const loginRes = await app.inject({
-      method: 'POST',
-      url: '/auth/login',
-      payload: { email, password: 'password123' },
-    });
-
-    return JSON.parse(loginRes.body);
-  }
 
   async function createProduct(accessToken: string) {
     const res = await app.inject({
@@ -67,7 +48,7 @@ describe('Dashboard (e2e)', () => {
     });
 
     it('should reject OPERATOR', async () => {
-      const { accessToken } = await registerAndLogin('OPERATOR');
+      const { accessToken } = await registerAndLogin(app, 'OPERATOR');
 
       const res = await app.inject({
         method: 'GET',
@@ -79,7 +60,7 @@ describe('Dashboard (e2e)', () => {
     });
 
     it('should return summary for ADMIN', async () => {
-      const { accessToken } = await registerAndLogin('ADMIN');
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
 
       const res = await app.inject({
         method: 'GET',
@@ -108,7 +89,7 @@ describe('Dashboard (e2e)', () => {
     });
 
     it('should reject OPERATOR', async () => {
-      const { accessToken } = await registerAndLogin('OPERATOR');
+      const { accessToken } = await registerAndLogin(app, 'OPERATOR');
 
       const res = await app.inject({
         method: 'GET',
@@ -120,7 +101,7 @@ describe('Dashboard (e2e)', () => {
     });
 
     it('should return consumption data for ADMIN', async () => {
-      const { accessToken } = await registerAndLogin('ADMIN');
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
 
       const res = await app.inject({
         method: 'GET',
@@ -144,7 +125,7 @@ describe('Dashboard (e2e)', () => {
     });
 
     it('should reject OPERATOR', async () => {
-      const { accessToken } = await registerAndLogin('OPERATOR');
+      const { accessToken } = await registerAndLogin(app, 'OPERATOR');
 
       const res = await app.inject({
         method: 'GET',
@@ -156,7 +137,7 @@ describe('Dashboard (e2e)', () => {
     });
 
     it('should return meal ranking for ADMIN', async () => {
-      const { accessToken } = await registerAndLogin('ADMIN');
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
 
       const res = await app.inject({
         method: 'GET',
@@ -180,7 +161,7 @@ describe('Dashboard (e2e)', () => {
     });
 
     it('should reject OPERATOR', async () => {
-      const { accessToken } = await registerAndLogin('OPERATOR');
+      const { accessToken } = await registerAndLogin(app, 'OPERATOR');
 
       const res = await app.inject({
         method: 'GET',
@@ -192,7 +173,7 @@ describe('Dashboard (e2e)', () => {
     });
 
     it('should return stock history for existing product', async () => {
-      const { accessToken } = await registerAndLogin('ADMIN');
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
       const product = await createProduct(accessToken);
 
       const res = await app.inject({
@@ -207,7 +188,7 @@ describe('Dashboard (e2e)', () => {
     });
 
     it('should return empty array for non-existent product', async () => {
-      const { accessToken } = await registerAndLogin('ADMIN');
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
 
       const res = await app.inject({
         method: 'GET',
@@ -235,7 +216,7 @@ describe('Dashboard (e2e)', () => {
     });
 
     it('should return CSV for ADMIN', async () => {
-      const { accessToken } = await registerAndLogin('ADMIN');
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
 
       const res = await app.inject({
         method: 'GET',
@@ -250,7 +231,7 @@ describe('Dashboard (e2e)', () => {
 
   describe('GET /dashboard/meal-ranking/csv', () => {
     it('should return CSV for ADMIN', async () => {
-      const { accessToken } = await registerAndLogin('ADMIN');
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
 
       const res = await app.inject({
         method: 'GET',
@@ -265,7 +246,7 @@ describe('Dashboard (e2e)', () => {
 
   describe('GET /dashboard/stock-history/:productId/csv', () => {
     it('should return CSV for ADMIN', async () => {
-      const { accessToken } = await registerAndLogin('ADMIN');
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
       const product = await createProduct(accessToken);
 
       const res = await app.inject({
@@ -292,7 +273,7 @@ describe('Dashboard (e2e)', () => {
     });
 
     it('should reject OPERATOR', async () => {
-      const { accessToken } = await registerAndLogin('OPERATOR');
+      const { accessToken } = await registerAndLogin(app, 'OPERATOR');
 
       const res = await app.inject({
         method: 'GET',
@@ -304,7 +285,7 @@ describe('Dashboard (e2e)', () => {
     });
 
     it('should return monthly consumption data for ADMIN', async () => {
-      const { accessToken } = await registerAndLogin('ADMIN');
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
 
       const res = await app.inject({
         method: 'GET',
@@ -325,7 +306,7 @@ describe('Dashboard (e2e)', () => {
 
   describe('GET /dashboard/charts/room-comparison', () => {
     it('should return room comparison for ADMIN', async () => {
-      const { accessToken } = await registerAndLogin('ADMIN');
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
 
       const res = await app.inject({
         method: 'GET',
@@ -345,7 +326,7 @@ describe('Dashboard (e2e)', () => {
 
   describe('GET /dashboard/charts/category-distribution', () => {
     it('should return category distribution for ADMIN', async () => {
-      const { accessToken } = await registerAndLogin('ADMIN');
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
 
       const res = await app.inject({
         method: 'GET',
@@ -365,7 +346,7 @@ describe('Dashboard (e2e)', () => {
 
   describe('GET /dashboard/charts/stock-evolution/:productId', () => {
     it('should return stock evolution for ADMIN', async () => {
-      const { accessToken } = await registerAndLogin('ADMIN');
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
       const product = await createProduct(accessToken);
 
       const res = await app.inject({

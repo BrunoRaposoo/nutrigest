@@ -5,6 +5,7 @@ import {
 import { Test, type TestingModule } from '@nestjs/testing';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { AppModule } from './../src/app.module';
+import { registerAndLogin } from './helpers/auth.helper';
 
 describe('CentralStock (e2e)', () => {
   let app: NestFastifyApplication;
@@ -26,26 +27,6 @@ describe('CentralStock (e2e)', () => {
     await app.close();
   });
 
-  async function registerAndLogin(
-    role: 'ADMIN' | 'TECHNICIAN' | 'OPERATOR' = 'OPERATOR',
-  ) {
-    const email = `e2e-cs-${role}-${Date.now()}-${Math.random()}@example.com`;
-
-    await app.inject({
-      method: 'POST',
-      url: '/auth/register',
-      payload: { name: `${role} User`, email, password: 'password123', role },
-    });
-
-    const loginRes = await app.inject({
-      method: 'POST',
-      url: '/auth/login',
-      payload: { email, password: 'password123' },
-    });
-
-    return JSON.parse(loginRes.body);
-  }
-
   async function createProduct(accessToken: string) {
     const res = await app.inject({
       method: 'POST',
@@ -63,7 +44,7 @@ describe('CentralStock (e2e)', () => {
     });
 
     it('should list stock for ADMIN', async () => {
-      const { accessToken } = await registerAndLogin('ADMIN');
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
       await createProduct(accessToken);
 
       const res = await app.inject({
@@ -83,7 +64,7 @@ describe('CentralStock (e2e)', () => {
     });
 
     it('should list stock for OPERATOR', async () => {
-      const { accessToken } = await registerAndLogin('OPERATOR');
+      const { accessToken } = await registerAndLogin(app, 'OPERATOR');
 
       const res = await app.inject({
         method: 'GET',
@@ -97,7 +78,7 @@ describe('CentralStock (e2e)', () => {
 
   describe('GET /central-stock/:productId', () => {
     it('should get stock by product ID', async () => {
-      const { accessToken } = await registerAndLogin('ADMIN');
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
       const product = await createProduct(accessToken);
 
       const res = await app.inject({
@@ -111,7 +92,7 @@ describe('CentralStock (e2e)', () => {
     });
 
     it('should return 404 for non-existent product', async () => {
-      const { accessToken } = await registerAndLogin('ADMIN');
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
 
       const res = await app.inject({
         method: 'GET',
@@ -125,7 +106,7 @@ describe('CentralStock (e2e)', () => {
 
   describe('PATCH /central-stock/:productId', () => {
     it('should update stock as ADMIN', async () => {
-      const { accessToken } = await registerAndLogin('ADMIN');
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
       const product = await createProduct(accessToken);
 
       const res = await app.inject({
@@ -140,7 +121,7 @@ describe('CentralStock (e2e)', () => {
     });
 
     it('should update stock as TECHNICIAN', async () => {
-      const { accessToken } = await registerAndLogin('TECHNICIAN');
+      const { accessToken } = await registerAndLogin(app, 'TECHNICIAN');
       const product = await createProduct(accessToken);
 
       const res = await app.inject({
@@ -154,8 +135,8 @@ describe('CentralStock (e2e)', () => {
     });
 
     it('should reject update as OPERATOR', async () => {
-      const admin = await registerAndLogin('ADMIN');
-      const operator = await registerAndLogin('OPERATOR');
+      const admin = await registerAndLogin(app, 'ADMIN');
+      const operator = await registerAndLogin(app, 'OPERATOR');
       const product = await createProduct(admin.accessToken);
 
       const res = await app.inject({
@@ -169,7 +150,7 @@ describe('CentralStock (e2e)', () => {
     });
 
     it('should reject negative quantity', async () => {
-      const { accessToken } = await registerAndLogin('ADMIN');
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
       const product = await createProduct(accessToken);
 
       const res = await app.inject({
@@ -183,7 +164,7 @@ describe('CentralStock (e2e)', () => {
     });
 
     it('should return 404 for non-existent product', async () => {
-      const { accessToken } = await registerAndLogin('ADMIN');
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
 
       const res = await app.inject({
         method: 'PATCH',
@@ -196,7 +177,7 @@ describe('CentralStock (e2e)', () => {
     });
 
     it('should create stock entry if not exists', async () => {
-      const { accessToken } = await registerAndLogin('ADMIN');
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
       const product = await createProduct(accessToken);
 
       const res = await app.inject({
