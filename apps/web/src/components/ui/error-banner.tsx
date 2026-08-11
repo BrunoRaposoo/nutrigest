@@ -5,7 +5,10 @@ interface ErrorBannerProps {
 
 export function ErrorBanner({ message, onDismiss }: ErrorBannerProps) {
   return (
-    <div className="flex items-start justify-between gap-3 rounded-lg bg-red-50 dark:bg-red-900/20 p-3 text-sm text-red-600 dark:text-red-400">
+    <div
+      role="alert"
+      className="flex items-start justify-between gap-3 rounded-lg bg-red-50 dark:bg-red-900/20 p-3 text-sm text-red-600 dark:text-red-400 transition-theme"
+    >
       <span>{message}</span>
       {onDismiss && (
         <button
