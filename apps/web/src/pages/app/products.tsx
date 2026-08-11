@@ -53,6 +53,7 @@ export default function Products() {
 
   const openCreate = () => {
     setFormError('');
+    createProduct.reset();
     setEditingProduct(null);
     reset({ name: '', category: 'BEVERAGE', unit: '' });
     setDialogOpen(true);
@@ -60,6 +61,7 @@ export default function Products() {
 
   const openEdit = (product: Product) => {
     setFormError('');
+    createProduct.reset();
     setEditingProduct(product);
     reset({
       name: product.name,
