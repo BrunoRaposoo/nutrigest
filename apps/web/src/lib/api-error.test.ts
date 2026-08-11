@@ -20,6 +20,11 @@ describe('getApiErrorMessage', () => {
     );
   });
 
+  it('returns generic message when response message is an empty array', () => {
+    const err = { response: { data: { message: [] } } };
+    expect(getApiErrorMessage(err)).toBe('Ocorreu um erro inesperado');
+  });
+
   it('returns Error.message for network errors', () => {
     const err = new Error('Servidor indisponível. Verifique sua conexão.');
     expect(getApiErrorMessage(err)).toBe(
