@@ -416,6 +416,58 @@ describe('StockMovementsService', () => {
         ),
       ).rejects.toThrow(NotFoundException);
     });
+
+    it('should never oversell stock under concurrent meal outs', async () => {
+      const productId = await getAnyProductId();
+      const userId = await getAnyUserId();
+      if (!productId || !userId) return;
+
+      const initial = 10;
+      await centralStock.update(productId, { quantity: initial });
+
+      const results = await Promise.allSettled(
+        Array.from({ length: 20 }, () =>
+          service.createMealOut(
+            { productId, quantity: 1, description: 'teste' },
+            userId,
+          ),
+        ),
+      );
+      const succeeded = results.filter((r) => r.status === 'fulfilled').length;
+      const finalQty = await centralStock.getQuantity(productId);
+
+      expect(succeeded).toBeLessThanOrEqual(initial);
+      expect(finalQty).toBeGreaterThanOrEqual(0);
+      expect(finalQty).toBe(initial - succeeded);
+    });
+
+    it('should roll back the MEAL_OUT movement when the transaction fails due to insufficient stock', async () => {
+      const productId = await getAnyProductId();
+      const userId = await getAnyUserId();
+      if (!productId || !userId) return;
+
+      await centralStock.update(productId, { quantity: 3 });
+
+      const before = await db.db
+        .select({ id: stockMovements.id })
+        .from(stockMovements)
+        .where(eq(stockMovements.type, 'MEAL_OUT'));
+
+      await expect(
+        service.createMealOut(
+          { productId, quantity: 5, description: 'teste' },
+          userId,
+        ),
+      ).rejects.toThrow(BadRequestException);
+
+      const after = await db.db
+        .select({ id: stockMovements.id })
+        .from(stockMovements)
+        .where(eq(stockMovements.type, 'MEAL_OUT'));
+
+      expect(await centralStock.getQuantity(productId)).toBe(3);
+      expect(after.length).toBe(before.length);
+    });
   });
 
   describe('findAll', () => {

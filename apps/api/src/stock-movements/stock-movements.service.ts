@@ -4,7 +4,6 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { and, desc, eq, gte, lte, sql } from 'drizzle-orm';
-import { CentralStockService } from '../central-stock/central-stock.service';
 import { DbService } from '../db/db.service';
 import { centralStock } from '../db/schema/central-stock';
 import { products } from '../db/schema/products';
@@ -19,10 +18,7 @@ const VALID_ROOMS = Array.from({ length: 10 }, (_, i) => 101 + i);
 
 @Injectable()
 export class StockMovementsService {
-  constructor(
-    private db: DbService,
-    private centralStockService: CentralStockService,
-  ) {}
+  constructor(private db: DbService) {}
 
   async createIn(dto: CreateInMovementData, userId: string) {
     for (const item of dto.items) {
@@ -120,13 +116,6 @@ export class StockMovementsService {
   async createMealOut(dto: CreateMealOutMovementData, userId: string) {
     const product = await this.ensureProductExists(dto.productId);
 
-    const qty = await this.centralStockService.getQuantity(dto.productId);
-    if (qty < dto.quantity) {
-      throw new BadRequestException(
-        `Estoque insuficiente para ${product.name}: disponível ${qty}, necessário ${dto.quantity}`,
-      );
-    }
-
     const [movement] = await this.db.db.transaction(async (tx) => {
       const [m] = await tx
         .insert(stockMovements)
@@ -139,7 +128,12 @@ export class StockMovementsService {
         })
         .returning();
 
-      await this.upsertCentralStock(tx, dto.productId, -dto.quantity);
+      await this.decrementCentralStock(
+        tx,
+        dto.productId,
+        dto.quantity,
+        product.name,
+      );
 
       return [m];
     });
