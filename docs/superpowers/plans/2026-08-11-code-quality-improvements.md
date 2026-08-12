@@ -38,7 +38,7 @@
 |---|---|---|---|
 | 1 | `fix/security-register-and-jwt` | Crítica 1 + Crítica 5 | ⬜ pendente |
 | 2 | `fix/frontend-error-handling` | Crítica 2 | ✅ concluída |
-| 3 | `fix/stock-atomicity` | Crítica 3 | ⬜ pendente |
+| 3 | `fix/stock-atomicity` | Crítica 3 | ✅ concluída |
 | 4 | `fix/auth-refresh-and-rate-limit` | Crítica 4 + Moderadas 6, 7, 8 | ⬜ pendente |
 | 5 | `fix/db-indexes-and-data-integrity` | Moderadas 9, 10, 12, 14, 15 | ⬜ pendente |
 | 6 | `fix/code-quality-polish` | Leves 16–22 | ⬜ pendente |
@@ -167,12 +167,12 @@ Usar **incremento atômico no banco** em vez de ler-calcular-gravar:
 
 ## Passos de execução
 
-- [ ] **Passo 1 — TDD:** escrever testes de concorrência/saldo insuficiente (replicar race). Rodar e ver falhar (ou documentar o comportamento atual).
-- [ ] **Passo 2 — Implementar:** incremento atômico via `sql` em `upsertCentralStock`.
-- [ ] **Passo 3 — Implementar:** checagem de saldo dentro da transação com `SELECT ... FOR UPDATE` em `createReplenish`.
-- [ ] **Passo 4 — Implementar:** `increment`/`decrement` atômicos no `CentralStockService`.
-- [ ] **Passo 5 — Verificar:** `pnpm --filter @nutrigest/api test`, `pnpm --filter @nutrigest/api test:e2e`, `pnpm lint`, `pnpm build:api`.
-- [ ] **Passo 6 — Commit:** commits atômicos por serviço.
+- [x] **Passo 1 — TDD:** escrever testes de concorrência/saldo insuficiente (replicar race). Rodar e ver falhar (ou documentar o comportamento atual).
+- [x] **Passo 2 — Implementar:** incremento atômico via `sql` em `upsertCentralStock`.
+- [x] **Passo 3 — Implementar:** checagem de saldo dentro da transação com `SELECT ... FOR UPDATE` em `createReplenish`.
+- [x] **Passo 4 — Implementar:** `increment`/`decrement` atômicos no `CentralStockService`.
+- [x] **Passo 5 — Verificar:** `pnpm --filter @nutrigest/api test`, `pnpm --filter @nutrigest/api test:e2e`, `pnpm lint`, `pnpm build:api`.
+- [x] **Passo 6 — Commit:** commits atômicos por serviço.
 - [ ] **Passo 7 — Usuário testa manualmente; autoriza push + PR.**
 
 ---
