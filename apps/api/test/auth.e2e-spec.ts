@@ -221,7 +221,7 @@ describe('Auth (e2e)', () => {
       const resetRes = await app.inject({
         method: 'POST',
         url: '/auth/reset-password',
-        payload: { token: resetToken, password: 'newpassword456' },
+        payload: { email, token: resetToken, password: 'newpassword456' },
       });
 
       expect(resetRes.statusCode).toBe(201);
@@ -241,7 +241,11 @@ describe('Auth (e2e)', () => {
       const res = await app.inject({
         method: 'POST',
         url: '/auth/reset-password',
-        payload: { token: 'invalid-token', password: 'newpassword456' },
+        payload: {
+          email: 'nobody@example.com',
+          token: 'invalid-token',
+          password: 'newpassword456',
+        },
       });
 
       expect(res.statusCode).toBe(400);
