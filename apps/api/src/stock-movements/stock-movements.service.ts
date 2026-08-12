@@ -216,6 +216,9 @@ export class StockMovementsService {
 
   // biome-ignore lint/suspicious/noExplicitAny: Drizzle transaction type
   private async upsertCentralStock(tx: any, productId: string, delta: number) {
+    // GREATEST: Postgres reavalia CHECK (quantity >= 0) na linha proposta ANTES de
+    // resolver o conflito; com delta negativo o insert especulativo falharia. O
+    // decremento real é aplicado atomicamente no DO UPDATE (quantity + delta).
     await tx
       .insert(centralStock)
       .values({ productId, quantity: sql`GREATEST(${delta}, 0)` })
