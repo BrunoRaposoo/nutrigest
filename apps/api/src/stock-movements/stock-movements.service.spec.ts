@@ -1,8 +1,10 @@
+import { randomUUID } from 'node:crypto';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { eq } from 'drizzle-orm';
 import { CentralStockService } from '../central-stock/central-stock.service';
 import { DbService } from '../db/db.service';
+import { centralStock as centralStockTable } from '../db/schema/central-stock';
 import { products } from '../db/schema/products';
 import { stockMovements } from '../db/schema/stock-movements';
 import { users } from '../db/schema/users';
@@ -39,6 +41,27 @@ describe('StockMovementsService', () => {
   async function getAnyUserId() {
     const [user] = await db.db.select({ id: users.id }).from(users).limit(1);
     return user?.id;
+  }
+
+  async function createIsolatedProduct() {
+    const [product] = await db.db
+      .insert(products)
+      .values({
+        name: `zzz_concurrency_${randomUUID()}`,
+        category: 'MEAL',
+      })
+      .returning({ id: products.id });
+    return product.id;
+  }
+
+  async function deleteIsolatedProduct(productId: string) {
+    await db.db
+      .delete(stockMovements)
+      .where(eq(stockMovements.productId, productId));
+    await db.db
+      .delete(centralStockTable)
+      .where(eq(centralStockTable.productId, productId));
+    await db.db.delete(products).where(eq(products.id, productId));
   }
 
   describe('createIn', () => {
@@ -102,7 +125,7 @@ describe('StockMovementsService', () => {
     });
 
     it('should not lose updates under concurrent IN movements', async () => {
-      const productId = await getAnyProductId();
+      const productId = await createIsolatedProduct();
       const userId = await getAnyUserId();
       if (!productId || !userId) return;
 
@@ -117,6 +140,8 @@ describe('StockMovementsService', () => {
 
       expect(succeeded).toBe(20);
       expect(after).toBe(before + 20);
+
+      await deleteIsolatedProduct(productId);
     });
   });
 
@@ -311,7 +336,7 @@ describe('StockMovementsService', () => {
     });
 
     it('should never oversell stock under concurrent replenishes', async () => {
-      const productId = await getAnyProductId();
+      const productId = await createIsolatedProduct();
       const userId = await getAnyUserId();
       if (!productId || !userId) return;
 
@@ -335,6 +360,8 @@ describe('StockMovementsService', () => {
       expect(succeeded).toBeLessThanOrEqual(initial);
       expect(finalQty).toBeGreaterThanOrEqual(0);
       expect(finalQty).toBe(initial - succeeded);
+
+      await deleteIsolatedProduct(productId);
     });
   });
 
@@ -418,7 +445,7 @@ describe('StockMovementsService', () => {
     });
 
     it('should never oversell stock under concurrent meal outs', async () => {
-      const productId = await getAnyProductId();
+      const productId = await createIsolatedProduct();
       const userId = await getAnyUserId();
       if (!productId || !userId) return;
 
@@ -439,6 +466,8 @@ describe('StockMovementsService', () => {
       expect(succeeded).toBeLessThanOrEqual(initial);
       expect(finalQty).toBeGreaterThanOrEqual(0);
       expect(finalQty).toBe(initial - succeeded);
+
+      await deleteIsolatedProduct(productId);
     });
 
     it('should roll back the MEAL_OUT movement when the transaction fails due to insufficient stock', async () => {

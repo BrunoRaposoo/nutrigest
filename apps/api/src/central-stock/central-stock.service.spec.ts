@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { eq } from 'drizzle-orm';
@@ -22,6 +23,21 @@ describe('CentralStockService', () => {
   afterAll(async () => {
     await db.onModuleDestroy();
   });
+
+  async function createIsolatedProduct() {
+    const [product] = await db.db
+      .insert(products)
+      .values({
+        name: `zzz_concurrency_${randomUUID()}`,
+        category: 'MEAL',
+      })
+      .returning({ id: products.id });
+    return product.id;
+  }
+
+  async function deleteIsolatedProduct(productId: string) {
+    await db.db.delete(products).where(eq(products.id, productId));
+  }
 
   describe('findAll', () => {
     it('should return array of stock entries with product details', async () => {
@@ -159,23 +175,23 @@ describe('CentralStockService', () => {
     });
 
     it('should not oversell under concurrent decrements', async () => {
-      const all = await service.findAll();
-      if (all.length === 0) return;
+      const productId = await createIsolatedProduct();
+      if (!productId) return;
 
       const initial = 10;
-      await service.update(all[0].productId, { quantity: initial });
+      await service.update(productId, { quantity: initial });
 
       const results = await Promise.allSettled(
-        Array.from({ length: 20 }, () =>
-          service.decrement(all[0].productId, 1),
-        ),
+        Array.from({ length: 20 }, () => service.decrement(productId, 1)),
       );
       const succeeded = results.filter((r) => r.status === 'fulfilled').length;
-      const finalQty = await service.getQuantity(all[0].productId);
+      const finalQty = await service.getQuantity(productId);
 
       expect(succeeded).toBeLessThanOrEqual(initial);
       expect(finalQty).toBe(initial - succeeded);
       expect(finalQty).toBeGreaterThanOrEqual(0);
+
+      await deleteIsolatedProduct(productId);
     });
 
     it('should use Portuguese message with product name if insufficient stock', async () => {
