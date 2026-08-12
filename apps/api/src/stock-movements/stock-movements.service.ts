@@ -64,16 +64,10 @@ export class StockMovementsService {
       throw new NotFoundException('Room not found');
     }
 
+    const productNames = new Map<string, string>();
     for (const item of dto.items) {
       const product = await this.ensureProductExists(item.productId);
-      if (item.restockedQuantity > 0) {
-        const qty = await this.centralStockService.getQuantity(item.productId);
-        if (qty < item.restockedQuantity) {
-          throw new BadRequestException(
-            `Estoque insuficiente para ${product.name}: disponível ${qty}, necessário ${item.restockedQuantity}`,
-          );
-        }
-      }
+      productNames.set(item.productId, product.name);
     }
 
     const created = await this.db.db.transaction(async (tx) => {
@@ -95,6 +89,13 @@ export class StockMovementsService {
         }
 
         if (item.restockedQuantity > 0) {
+          await this.decrementCentralStock(
+            tx,
+            item.productId,
+            item.restockedQuantity,
+            productNames.get(item.productId) ?? 'produto',
+          );
+
           const [replenish] = await tx
             .insert(stockMovements)
             .values({
@@ -105,12 +106,6 @@ export class StockMovementsService {
               userId,
             })
             .returning();
-
-          await this.upsertCentralStock(
-            tx,
-            item.productId,
-            -item.restockedQuantity,
-          );
 
           records.push(replenish);
         }
@@ -212,6 +207,40 @@ export class StockMovementsService {
     }
 
     return product;
+  }
+
+  private async decrementCentralStock(
+    // biome-ignore lint/suspicious/noExplicitAny: Drizzle transaction type
+    tx: any,
+    productId: string,
+    amount: number,
+    productName: string,
+  ) {
+    const [updated] = await tx
+      .update(centralStock)
+      .set({
+        quantity: sql`${centralStock.quantity} - ${amount}`,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(centralStock.productId, productId),
+          gte(centralStock.quantity, amount),
+        ),
+      )
+      .returning({ quantity: centralStock.quantity });
+
+    if (!updated) {
+      const [current] = await tx
+        .select({ quantity: centralStock.quantity })
+        .from(centralStock)
+        .where(eq(centralStock.productId, productId))
+        .limit(1);
+
+      throw new BadRequestException(
+        `Estoque insuficiente para ${productName}: disponível ${current?.quantity ?? 0}, necessário ${amount}`,
+      );
+    }
   }
 
   // biome-ignore lint/suspicious/noExplicitAny: Drizzle transaction type
