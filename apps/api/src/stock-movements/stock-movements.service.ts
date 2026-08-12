@@ -117,6 +117,13 @@ export class StockMovementsService {
     const product = await this.ensureProductExists(dto.productId);
 
     const [movement] = await this.db.db.transaction(async (tx) => {
+      await this.decrementCentralStock(
+        tx,
+        dto.productId,
+        dto.quantity,
+        product.name,
+      );
+
       const [m] = await tx
         .insert(stockMovements)
         .values({
@@ -127,13 +134,6 @@ export class StockMovementsService {
           description: dto.description,
         })
         .returning();
-
-      await this.decrementCentralStock(
-        tx,
-        dto.productId,
-        dto.quantity,
-        product.name,
-      );
 
       return [m];
     });
