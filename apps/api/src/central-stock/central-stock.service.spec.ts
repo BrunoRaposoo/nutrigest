@@ -1,6 +1,8 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
+import { eq } from 'drizzle-orm';
 import { DbService } from '../db/db.service';
+import { products } from '../db/schema/products';
 import { CentralStockService } from './central-stock.service';
 
 describe('CentralStockService', () => {
@@ -154,6 +156,53 @@ describe('CentralStockService', () => {
       await expect(
         service.decrement('00000000-0000-0000-0000-000000000000', 5),
       ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should not oversell under concurrent decrements', async () => {
+      const all = await service.findAll();
+      if (all.length === 0) return;
+
+      const initial = 10;
+      await service.update(all[0].productId, { quantity: initial });
+
+      const results = await Promise.allSettled(
+        Array.from({ length: 20 }, () =>
+          service.decrement(all[0].productId, 1),
+        ),
+      );
+      const succeeded = results.filter((r) => r.status === 'fulfilled').length;
+      const finalQty = await service.getQuantity(all[0].productId);
+
+      expect(succeeded).toBeLessThanOrEqual(initial);
+      expect(finalQty).toBe(initial - succeeded);
+      expect(finalQty).toBeGreaterThanOrEqual(0);
+    });
+
+    it('should use Portuguese message with product name if insufficient stock', async () => {
+      const all = await service.findAll();
+      if (all.length === 0) return;
+
+      await service.update(all[0].productId, { quantity: 1 });
+
+      const [product] = await db.db
+        .select({ id: products.id, name: products.name })
+        .from(products)
+        .where(eq(products.id, all[0].productId))
+        .limit(1);
+
+      const error = await service
+        .decrement(all[0].productId, 10)
+        .catch((e: Error) => e);
+
+      expect(error).toBeInstanceOf(BadRequestException);
+      const response = (error as BadRequestException).getResponse();
+      const message =
+        typeof response === 'string'
+          ? response
+          : (response as { message: string }).message;
+      expect(message).toContain('Estoque insuficiente');
+      expect(message).not.toContain('Insufficient');
+      if (product) expect(message).toContain(product.name);
     });
   });
 });

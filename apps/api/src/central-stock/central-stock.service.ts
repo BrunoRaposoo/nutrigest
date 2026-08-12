@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { and, eq, gte, sql } from 'drizzle-orm';
 import { DbService } from '../db/db.service';
 import { centralStock } from '../db/schema/central-stock';
 import { products } from '../db/schema/products';
@@ -114,14 +114,15 @@ export class CentralStockService {
       throw new NotFoundException('Product not found');
     }
 
-    const currentQty = await this.getQuantity(productId);
-
     await this.db.db
       .insert(centralStock)
-      .values({ productId, quantity: currentQty + amount })
+      .values({ productId, quantity: amount })
       .onConflictDoUpdate({
         target: centralStock.productId,
-        set: { quantity: currentQty + amount, updatedAt: new Date() },
+        set: {
+          quantity: sql`${centralStock.quantity} + ${amount}`,
+          updatedAt: new Date(),
+        },
       });
   }
 
@@ -136,20 +137,25 @@ export class CentralStockService {
       throw new NotFoundException('Product not found');
     }
 
-    const currentQty = await this.getQuantity(productId);
+    const [updated] = await this.db.db
+      .update(centralStock)
+      .set({
+        quantity: sql`${centralStock.quantity} - ${amount}`,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(centralStock.productId, productId),
+          gte(centralStock.quantity, amount),
+        ),
+      )
+      .returning({ quantity: centralStock.quantity });
 
-    if (currentQty < amount) {
+    if (!updated) {
+      const available = await this.getQuantity(productId);
       throw new BadRequestException(
-        `Insufficient stock: available ${currentQty}, required ${amount}`,
+        `Estoque insuficiente para ${existing.name}: disponível ${available}, necessário ${amount}`,
       );
     }
-
-    await this.db.db
-      .insert(centralStock)
-      .values({ productId, quantity: currentQty - amount })
-      .onConflictDoUpdate({
-        target: centralStock.productId,
-        set: { quantity: currentQty - amount, updatedAt: new Date() },
-      });
   }
 }
