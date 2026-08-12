@@ -129,19 +129,23 @@ describe('StockMovementsService', () => {
       const userId = await getAnyUserId();
       if (!productId || !userId) return;
 
-      const before = await centralStock.getQuantity(productId);
-      const results = await Promise.allSettled(
-        Array.from({ length: 20 }, () =>
-          service.createIn({ items: [{ productId, quantity: 1 }] }, userId),
-        ),
-      );
-      const succeeded = results.filter((r) => r.status === 'fulfilled').length;
-      const after = await centralStock.getQuantity(productId);
+      try {
+        const before = await centralStock.getQuantity(productId);
+        const results = await Promise.allSettled(
+          Array.from({ length: 20 }, () =>
+            service.createIn({ items: [{ productId, quantity: 1 }] }, userId),
+          ),
+        );
+        const succeeded = results.filter(
+          (r) => r.status === 'fulfilled',
+        ).length;
+        const after = await centralStock.getQuantity(productId);
 
-      expect(succeeded).toBe(20);
-      expect(after).toBe(before + 20);
-
-      await deleteIsolatedProduct(productId);
+        expect(succeeded).toBe(20);
+        expect(after).toBe(before + 20);
+      } finally {
+        await deleteIsolatedProduct(productId);
+      }
     });
   });
 
@@ -340,28 +344,34 @@ describe('StockMovementsService', () => {
       const userId = await getAnyUserId();
       if (!productId || !userId) return;
 
-      const initial = 10;
-      await centralStock.update(productId, { quantity: initial });
+      try {
+        const initial = 10;
+        await centralStock.update(productId, { quantity: initial });
 
-      const results = await Promise.allSettled(
-        Array.from({ length: 20 }, () =>
-          service.createReplenish(
-            101,
-            {
-              items: [{ productId, consumedQuantity: 0, restockedQuantity: 1 }],
-            },
-            userId,
+        const results = await Promise.allSettled(
+          Array.from({ length: 20 }, () =>
+            service.createReplenish(
+              101,
+              {
+                items: [
+                  { productId, consumedQuantity: 0, restockedQuantity: 1 },
+                ],
+              },
+              userId,
+            ),
           ),
-        ),
-      );
-      const succeeded = results.filter((r) => r.status === 'fulfilled').length;
-      const finalQty = await centralStock.getQuantity(productId);
+        );
+        const succeeded = results.filter(
+          (r) => r.status === 'fulfilled',
+        ).length;
+        const finalQty = await centralStock.getQuantity(productId);
 
-      expect(succeeded).toBeLessThanOrEqual(initial);
-      expect(finalQty).toBeGreaterThanOrEqual(0);
-      expect(finalQty).toBe(initial - succeeded);
-
-      await deleteIsolatedProduct(productId);
+        expect(succeeded).toBeLessThanOrEqual(initial);
+        expect(finalQty).toBeGreaterThanOrEqual(0);
+        expect(finalQty).toBe(initial - succeeded);
+      } finally {
+        await deleteIsolatedProduct(productId);
+      }
     });
   });
 
@@ -449,25 +459,29 @@ describe('StockMovementsService', () => {
       const userId = await getAnyUserId();
       if (!productId || !userId) return;
 
-      const initial = 10;
-      await centralStock.update(productId, { quantity: initial });
+      try {
+        const initial = 10;
+        await centralStock.update(productId, { quantity: initial });
 
-      const results = await Promise.allSettled(
-        Array.from({ length: 20 }, () =>
-          service.createMealOut(
-            { productId, quantity: 1, description: 'teste' },
-            userId,
+        const results = await Promise.allSettled(
+          Array.from({ length: 20 }, () =>
+            service.createMealOut(
+              { productId, quantity: 1, description: 'teste' },
+              userId,
+            ),
           ),
-        ),
-      );
-      const succeeded = results.filter((r) => r.status === 'fulfilled').length;
-      const finalQty = await centralStock.getQuantity(productId);
+        );
+        const succeeded = results.filter(
+          (r) => r.status === 'fulfilled',
+        ).length;
+        const finalQty = await centralStock.getQuantity(productId);
 
-      expect(succeeded).toBeLessThanOrEqual(initial);
-      expect(finalQty).toBeGreaterThanOrEqual(0);
-      expect(finalQty).toBe(initial - succeeded);
-
-      await deleteIsolatedProduct(productId);
+        expect(succeeded).toBeLessThanOrEqual(initial);
+        expect(finalQty).toBeGreaterThanOrEqual(0);
+        expect(finalQty).toBe(initial - succeeded);
+      } finally {
+        await deleteIsolatedProduct(productId);
+      }
     });
 
     it('should roll back the MEAL_OUT movement when the transaction fails due to insufficient stock', async () => {

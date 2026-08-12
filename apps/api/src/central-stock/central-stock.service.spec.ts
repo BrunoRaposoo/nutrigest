@@ -178,20 +178,24 @@ describe('CentralStockService', () => {
       const productId = await createIsolatedProduct();
       if (!productId) return;
 
-      const initial = 10;
-      await service.update(productId, { quantity: initial });
+      try {
+        const initial = 10;
+        await service.update(productId, { quantity: initial });
 
-      const results = await Promise.allSettled(
-        Array.from({ length: 20 }, () => service.decrement(productId, 1)),
-      );
-      const succeeded = results.filter((r) => r.status === 'fulfilled').length;
-      const finalQty = await service.getQuantity(productId);
+        const results = await Promise.allSettled(
+          Array.from({ length: 20 }, () => service.decrement(productId, 1)),
+        );
+        const succeeded = results.filter(
+          (r) => r.status === 'fulfilled',
+        ).length;
+        const finalQty = await service.getQuantity(productId);
 
-      expect(succeeded).toBeLessThanOrEqual(initial);
-      expect(finalQty).toBe(initial - succeeded);
-      expect(finalQty).toBeGreaterThanOrEqual(0);
-
-      await deleteIsolatedProduct(productId);
+        expect(succeeded).toBeLessThanOrEqual(initial);
+        expect(finalQty).toBe(initial - succeeded);
+        expect(finalQty).toBeGreaterThanOrEqual(0);
+      } finally {
+        await deleteIsolatedProduct(productId);
+      }
     });
 
     it('should use Portuguese message with product name if insufficient stock', async () => {
@@ -218,6 +222,7 @@ describe('CentralStockService', () => {
           : (response as { message: string }).message;
       expect(message).toContain('Estoque insuficiente');
       expect(message).not.toContain('Insufficient');
+      expect(message).not.toContain(all[0].productId);
       if (product) expect(message).toContain(product.name);
     });
   });
