@@ -6,7 +6,7 @@ import {
 import { JwtModule } from '@nestjs/jwt';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { DbService } from '../db/db.service';
-import { refreshTokens } from '../db/schema';
+import { passwordResetTokens, refreshTokens } from '../db/schema';
 import { AuthService } from './auth.service';
 
 describe('AuthService', () => {
@@ -26,6 +26,7 @@ describe('AuthService', () => {
 
   afterEach(async () => {
     await db.db.delete(refreshTokens);
+    await db.db.delete(passwordResetTokens);
   });
 
   afterAll(async () => {
@@ -255,6 +256,7 @@ describe('AuthService', () => {
       };
 
       const result = await service.resetPassword({
+        email,
         token: resetToken,
         password: 'newpassword456',
       });
@@ -272,6 +274,7 @@ describe('AuthService', () => {
     it('should reject invalid token', async () => {
       await expect(
         service.resetPassword({
+          email: 'nonexistent@example.com',
           token: 'invalid-token',
           password: 'newpassword456',
         }),
@@ -292,16 +295,66 @@ describe('AuthService', () => {
       };
 
       await service.resetPassword({
+        email,
         token: resetToken,
         password: 'newpassword456',
       });
 
       await expect(
         service.resetPassword({
+          email,
           token: resetToken,
           password: 'anotherpassword',
         }),
       ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject a valid token bound to a different email', async () => {
+      const email = `reset-other-${Date.now()}@example.com`;
+
+      await service.register({
+        name: 'Reset Other',
+        email,
+        password: 'password123',
+      });
+
+      const { resetToken } = (await service.forgotPassword({ email })) as {
+        resetToken: string;
+      };
+
+      await expect(
+        service.resetPassword({
+          email: 'someone-else@example.com',
+          token: resetToken,
+          password: 'newpassword456',
+        }),
+      ).rejects.toThrow(BadRequestException);
+
+      const loginResult = await service.login({
+        email,
+        password: 'password123',
+      });
+      expect(loginResult).toHaveProperty('accessToken');
+    });
+
+    it('should not expose resetToken in production', async () => {
+      const email = `reset-prod-${Date.now()}@example.com`;
+
+      await service.register({
+        name: 'Reset Prod',
+        email,
+        password: 'password123',
+      });
+
+      const previousEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'production';
+      try {
+        const result = await service.forgotPassword({ email });
+        expect(result).not.toHaveProperty('resetToken');
+        expect(result).toHaveProperty('message');
+      } finally {
+        process.env.NODE_ENV = previousEnv;
+      }
     });
   });
 });
