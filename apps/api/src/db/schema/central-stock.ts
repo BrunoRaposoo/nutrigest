@@ -12,5 +12,7 @@ export const centralStock = pgTable(
     quantity: integer('quantity').notNull().default(0),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
-  (table) => [check('central_stock_quantity_nonnegative', sql`${table.quantity} >= 0`)],
+  (table) => [
+    check('central_stock_quantity_nonnegative', sql`${table.quantity} >= 0`),
+  ],
 );
