@@ -199,6 +199,33 @@ describe('Auth (e2e)', () => {
       expect(body).toHaveProperty('message');
       expect(body).not.toHaveProperty('resetToken');
     });
+
+    it('should not expose resetToken when NODE_ENV is production', async () => {
+      const email = `e2e-forgot-prod-${Date.now()}@example.com`;
+
+      await app.inject({
+        method: 'POST',
+        url: '/auth/register',
+        payload: { name: 'Forgot Prod E2E', email, password: 'password123' },
+      });
+
+      const previousEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'production';
+      try {
+        const res = await app.inject({
+          method: 'POST',
+          url: '/auth/forgot-password',
+          payload: { email },
+        });
+
+        expect(res.statusCode).toBe(201);
+        const body = JSON.parse(res.body);
+        expect(body).toHaveProperty('message');
+        expect(body).not.toHaveProperty('resetToken');
+      } finally {
+        process.env.NODE_ENV = previousEnv;
+      }
+    });
   });
 
   describe('/auth/reset-password (POST)', () => {
@@ -249,6 +276,42 @@ describe('Auth (e2e)', () => {
       });
 
       expect(res.statusCode).toBe(400);
+    });
+
+    it('should reject a token bound to a different email', async () => {
+      const email = `e2e-reset-other-${Date.now()}@example.com`;
+
+      await app.inject({
+        method: 'POST',
+        url: '/auth/register',
+        payload: { name: 'Reset Other E2E', email, password: 'password123' },
+      });
+
+      const forgotRes = await app.inject({
+        method: 'POST',
+        url: '/auth/forgot-password',
+        payload: { email },
+      });
+      const { resetToken } = JSON.parse(forgotRes.body);
+
+      const resetRes = await app.inject({
+        method: 'POST',
+        url: '/auth/reset-password',
+        payload: {
+          email: 'someone-else@example.com',
+          token: resetToken,
+          password: 'newpassword456',
+        },
+      });
+
+      expect(resetRes.statusCode).toBe(400);
+
+      const loginRes = await app.inject({
+        method: 'POST',
+        url: '/auth/login',
+        payload: { email, password: 'password123' },
+      });
+      expect(loginRes.statusCode).toBe(201);
     });
   });
 
