@@ -256,6 +256,52 @@ describe('StockMovements (e2e)', () => {
       expect(res.statusCode).toBe(400);
     });
 
+    it('should return 400 when replenishing beyond available stock', async () => {
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
+      const product = await createProduct(accessToken);
+
+      await app.inject({
+        method: 'PATCH',
+        url: `/central-stock/${product.id}`,
+        headers: { authorization: `Bearer ${accessToken}` },
+        payload: { quantity: 3 },
+      });
+
+      for (let i = 0; i < 3; i++) {
+        const res = await app.inject({
+          method: 'POST',
+          url: '/stock-movements/replenish/101',
+          headers: { authorization: `Bearer ${accessToken}` },
+          payload: {
+            items: [
+              {
+                productId: product.id,
+                consumedQuantity: 0,
+                restockedQuantity: 1,
+              },
+            ],
+          },
+        });
+        expect(res.statusCode).toBe(201);
+      }
+
+      const res = await app.inject({
+        method: 'POST',
+        url: '/stock-movements/replenish/101',
+        headers: { authorization: `Bearer ${accessToken}` },
+        payload: {
+          items: [
+            {
+              productId: product.id,
+              consumedQuantity: 0,
+              restockedQuantity: 1,
+            },
+          ],
+        },
+      });
+      expect(res.statusCode).toBe(400);
+    });
+
     it('should return 404 for invalid room', async () => {
       const { accessToken } = await registerAndLogin(app, 'ADMIN');
       const product = await createProduct(accessToken);
