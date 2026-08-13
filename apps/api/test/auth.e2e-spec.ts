@@ -5,6 +5,7 @@ import {
 import { Test, type TestingModule } from '@nestjs/testing';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { AppModule } from './../src/app.module';
+import { AllExceptionsFilter } from './../src/common/filters/all-exceptions.filter';
 
 describe('Auth (e2e)', () => {
   let app: NestFastifyApplication;
@@ -18,6 +19,7 @@ describe('Auth (e2e)', () => {
       new FastifyAdapter(),
     );
     app.useGlobalPipes(new ZodValidationPipe());
+    app.useGlobalFilters(new AllExceptionsFilter());
     await app.init();
     await app.getHttpAdapter().getInstance().ready();
   });
@@ -222,6 +224,49 @@ describe('Auth (e2e)', () => {
         const body = JSON.parse(res.body);
         expect(body).toHaveProperty('message');
         expect(body).not.toHaveProperty('resetToken');
+      } finally {
+        process.env.NODE_ENV = previousEnv;
+      }
+    });
+
+    it('should return 429 JSON when the per-route limit is exceeded', async () => {
+      const email = `e2e-forgot-throttled-${Date.now()}@example.com`;
+
+      await app.inject({
+        method: 'POST',
+        url: '/auth/register',
+        payload: {
+          name: 'Forgot Throttled E2E',
+          email,
+          password: 'password123',
+        },
+      });
+
+      const previousEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'production';
+      try {
+        const statusCodes: number[] = [];
+        let first429Body: Record<string, unknown> | null = null;
+        let retryAfter: string | undefined;
+
+        for (let i = 0; i < 8; i++) {
+          const res = await app.inject({
+            method: 'POST',
+            url: '/auth/forgot-password',
+            payload: { email },
+          });
+          statusCodes.push(res.statusCode);
+          if (res.statusCode === 429) {
+            first429Body = JSON.parse(res.body);
+            retryAfter = res.headers['retry-after'];
+            break;
+          }
+        }
+
+        expect(statusCodes).toContain(429);
+        expect(first429Body).not.toBeNull();
+        expect(first429Body?.statusCode).toBe(429);
+        expect(retryAfter).toBeDefined();
       } finally {
         process.env.NODE_ENV = previousEnv;
       }

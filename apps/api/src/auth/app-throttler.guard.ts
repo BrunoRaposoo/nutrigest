@@ -7,7 +7,7 @@ export class AppThrottlerGuard extends ThrottlerGuard {
     const ips = req.ips;
     const tracker =
       Array.isArray(ips) && ips.length > 0
-        ? (ips[0] as string)
+        ? (ips[ips.length - 1] as string)
         : ((req.ip as string | undefined) ?? '');
     return Promise.resolve(tracker);
   }

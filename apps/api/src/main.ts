@@ -15,7 +15,7 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
-    new NutrigestFastifyAdapter({ logger: true }),
+    new NutrigestFastifyAdapter({ logger: true, trustProxy: true }),
   );
 
   app.setGlobalPrefix('api');
