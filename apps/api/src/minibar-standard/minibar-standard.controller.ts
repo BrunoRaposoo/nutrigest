@@ -12,13 +12,12 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { VALID_ROOMS } from '@nutrigest/shared';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { AddMinibarItemDto } from './dto/add-minibar-item.dto';
 import { UpdateMinibarItemDto } from './dto/update-minibar-item.dto';
 import { MinibarStandardService } from './minibar-standard.service';
-
-const VALID_ROOMS = Array.from({ length: 10 }, (_, i) => 101 + i);
 
 @ApiTags('Minibar Standard')
 @Controller('minibar-standard')

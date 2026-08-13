@@ -32,6 +32,7 @@
     "@nestjs/platform-fastify": "^11.0.1",
     "@nestjs/swagger": "^11.4.3",
     "@nestjs/throttler": "^6.5.0",
+    "@nutrigest/shared": "workspace:*",
     "bcrypt": "^6.0.0",
     "drizzle-orm": "^0.43.1",
     "fastify": "^5.8.5",

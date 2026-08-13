@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { LOW_STOCK_THRESHOLD } from '@nutrigest/shared';
 import { and, desc, eq, gte, lte, sql } from 'drizzle-orm';
 import { DbService } from '../db/db.service';
 import { centralStock } from '../db/schema/central-stock';
@@ -40,11 +41,11 @@ export class DashboardService {
       .from(centralStock)
       // biome-ignore lint/suspicious/noExplicitAny: Drizzle type resolution workaround
       .innerJoin(products as any, eq(centralStock.productId, products.id))
-      .where(lte(centralStock.quantity, 5));
+      .where(lte(centralStock.quantity, LOW_STOCK_THRESHOLD));
 
     const lowStockAlerts = lowStockData.map((item) => ({
       ...item,
-      threshold: 5,
+      threshold: LOW_STOCK_THRESHOLD,
     }));
 
     const todayStart = new Date();
