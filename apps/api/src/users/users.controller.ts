@@ -11,6 +11,7 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -54,7 +55,10 @@ export class UsersController {
   @Delete(':id')
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Delete user by ID (admin)' })
-  async remove(@Param('id') id: string) {
-    return this.usersService.remove(id);
+  async remove(
+    @Param('id') id: string,
+    @CurrentUser() currentUser: { id: string },
+  ) {
+    return this.usersService.remove(id, currentUser.id);
   }
 }
