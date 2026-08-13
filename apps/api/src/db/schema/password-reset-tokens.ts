@@ -1,4 +1,5 @@
 import {
+  index,
   pgTable,
   timestamp,
   uniqueIndex,
@@ -23,5 +24,6 @@ export const passwordResetTokens = pgTable(
     uniqueIndex('password_reset_tokens_token_digest_unique').on(
       table.tokenDigest,
     ),
+    index('password_reset_tokens_user_id_idx').on(table.userId),
   ],
 );

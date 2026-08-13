@@ -1,4 +1,5 @@
 import {
+  index,
   pgTable,
   timestamp,
   uniqueIndex,
@@ -20,5 +21,6 @@ export const refreshTokens = pgTable(
   },
   (table) => [
     uniqueIndex('refresh_tokens_token_digest_unique').on(table.tokenDigest),
+    index('refresh_tokens_user_id_idx').on(table.userId),
   ],
 );
