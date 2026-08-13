@@ -36,7 +36,7 @@
 
 | Etapa | Branch | Problemas | Status |
 |---|---|---|---|
-| 1 | `fix/security-register-and-jwt` | Crítica 1 + Crítica 5 | ⬜ pendente |
+| 1 | `fix/security-register-and-jwt` | Crítica 1 + Crítica 5 | ✅ concluída |
 | 2 | `fix/frontend-error-handling` | Crítica 2 | ✅ concluída |
 | 3 | `fix/stock-atomicity` | Crítica 3 | ✅ concluída |
 | 4 | `fix/auth-refresh-and-rate-limit` | Crítica 4 + Moderadas 6, 7, 8 | ✅ concluída |
@@ -77,12 +77,12 @@
 
 ## Passos de execução
 
-- [ ] **Passo 1 — TDD:** escrever teste que registra usuário enviando `role: 'ADMIN'` e espera `OPERATOR` no retorno; e teste unitário de `validateEnv()` que lança quando `NODE_ENV=production` e `JWT_SECRET` inseguro. Rodar e ver falhar.
-- [ ] **Passo 2 — Implementar:** remover `role` do `RegisterSchema`; fixar `role: 'OPERATOR'` em `auth.service.ts`; criar `config/env.ts`.
-- [ ] **Passo 3 — Implementar:** trocar fallbacks de `JWT_SECRET` por valor validado do config em `auth.module.ts` e `jwt.strategy.ts`.
-- [ ] **Passo 4 — Verificar:** `pnpm --filter @nutrigest/api test`, `pnpm --filter @nutrigest/api test:e2e`, `pnpm lint`, `pnpm build:api`.
-- [ ] **Passo 5 — Commit:** commits atômicos separando `test:`, `fix:` (register) e `fix:` (jwt secret).
-- [ ] **Passo 6 — Usuário testa manualmente; autoriza push + PR.**
+- [x] **Passo 1 — TDD:** escrever teste que registra usuário enviando `role: 'ADMIN'` e espera `OPERATOR` no retorno; e teste unitário de `validateEnv()` que lança quando `NODE_ENV=production` e `JWT_SECRET` inseguro. Rodar e ver falhar.
+- [x] **Passo 2 — Implementar:** remover `role` do `RegisterSchema`; fixar `role: 'OPERATOR'` em `auth.service.ts`; criar `config/env.ts`.
+- [x] **Passo 3 — Implementar:** trocar fallbacks de `JWT_SECRET` por valor validado do config em `auth.module.ts` e `jwt.strategy.ts`.
+- [x] **Passo 4 — Verificar:** `pnpm --filter @nutrigest/api test`, `pnpm --filter @nutrigest/api test:e2e`, `pnpm lint`, `pnpm build:api`.
+- [x] **Passo 5 — Commit:** commits atômicos separando `test:`, `fix:` (register) e `fix:` (jwt secret).
+- [x] **Passo 6 — Usuário testa manualmente; autoriza push + PR.**
 
 ---
 
