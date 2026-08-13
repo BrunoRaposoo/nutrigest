@@ -12,6 +12,7 @@ import {
 } from '../../components/ui/card';
 import { PasswordInput } from '../../components/ui/password-input';
 import { api } from '../../lib/api';
+import { getApiErrorMessage } from '../../lib/api-error';
 
 const resetSchema = z
   .object({
@@ -47,8 +48,8 @@ export default function ResetPassword() {
         password: data.password,
       });
       navigate('/login', { state: { reset: true } });
-    } catch {
-      setError('Erro ao redefinir senha. O token pode ter expirado.');
+    } catch (err) {
+      setError(getApiErrorMessage(err));
     }
   };
 

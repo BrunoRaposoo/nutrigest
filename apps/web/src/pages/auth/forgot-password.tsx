@@ -11,6 +11,7 @@ import {
 } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
 import { api } from '../../lib/api';
+import { getApiErrorMessage } from '../../lib/api-error';
 
 const forgotSchema = z.object({
   email: z.string().email('E-mail inválido'),
@@ -35,8 +36,8 @@ export default function ForgotPassword() {
     try {
       await api.post('/auth/forgot-password', data);
       setSent(true);
-    } catch {
-      setError('Erro ao enviar e-mail de recuperação');
+    } catch (err) {
+      setError(getApiErrorMessage(err));
     }
   };
 
