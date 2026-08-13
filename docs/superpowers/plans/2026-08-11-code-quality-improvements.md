@@ -39,7 +39,7 @@
 | 1 | `fix/security-register-and-jwt` | Crítica 1 + Crítica 5 | ⬜ pendente |
 | 2 | `fix/frontend-error-handling` | Crítica 2 | ✅ concluída |
 | 3 | `fix/stock-atomicity` | Crítica 3 | ✅ concluída |
-| 4 | `fix/auth-refresh-and-rate-limit` | Crítica 4 + Moderadas 6, 7, 8 | ⬜ pendente |
+| 4 | `fix/auth-refresh-and-rate-limit` | Crítica 4 + Moderadas 6, 7, 8 | ✅ concluída |
 | 5 | `fix/db-indexes-and-data-integrity` | Moderadas 9, 10, 12, 14, 15 | ⬜ pendente |
 | 6 | `fix/code-quality-polish` | Leves 16–22 | ⬜ pendente |
 
@@ -224,12 +224,12 @@ Usar **incremento atômico no banco** em vez de ler-calcular-gravar:
 
 ## Passos de execução
 
-- [ ] **Passo 1 — TDD:** testes para refresh/reset com filtro por user/email; e2e de rate limit (429). Ver falhar.
-- [ ] **Passo 2 — Implementar:** eficiência do refresh/reset (filtro por usuário/e-mail); DTO com e-mail.
-- [ ] **Passo 3 — Implementar:** ThrottlerModule + helmet; config de limites.
-- [ ] **Passo 4 — Implementar:** silent refresh no interceptor (com fila de pendentes).
-- [ ] **Passo 5 — Verificar:** `pnpm lint`, `pnpm build:api`, `pnpm build:web`, testes API + Web.
-- [ ] **Passo 6 — Commit:** atômicos (`fix:` per token, `feat:` throttler, `feat:` silent refresh).
+- [x] **Passo 1 — TDD:** testes para refresh/reset com filtro por user/email; e2e de rate limit (429). Ver falhar.
+- [x] **Passo 2 — Implementar:** eficiência do refresh/reset (filtro por usuário/e-mail); DTO com e-mail.
+- [x] **Passo 3 — Implementar:** ThrottlerModule + helmet; config de limites.
+- [x] **Passo 4 — Implementar:** silent refresh no interceptor (com fila de pendentes).
+- [x] **Passo 5 — Verificar:** `pnpm lint`, `pnpm build:api`, `pnpm build:web`, testes API + Web.
+- [x] **Passo 6 — Commit:** atômicos (`fix:` per token, `feat:` throttler, `feat:` silent refresh).
 - [ ] **Passo 7 — Usuário testa manualmente (sessão > 15min sem logout); autoriza push + PR.**
 
 ---
