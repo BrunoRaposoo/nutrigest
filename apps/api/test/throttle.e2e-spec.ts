@@ -16,9 +16,12 @@ class PingController {
 }
 
 class TestThrottlerGuard extends ThrottlerGuard {
-  protected getTracker(req: Record<string, any>): Promise<string> {
+  protected getTracker(req: Record<string, unknown>): Promise<string> {
     const ips = req.ips;
-    const tracker = Array.isArray(ips) && ips.length > 0 ? ips[0] : req.ip;
+    const tracker =
+      Array.isArray(ips) && ips.length > 0
+        ? (ips[0] as string)
+        : ((req.ip as string | undefined) ?? '');
     return Promise.resolve(tracker);
   }
 }
