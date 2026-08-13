@@ -183,6 +183,13 @@ export class DashboardService {
 
   // -- CSV Helpers --
 
+  private sanitizeCsvValue(value: string): string {
+    if (/^[=+\-@\t\r]/.test(value)) {
+      return `'${value}`;
+    }
+    return value;
+  }
+
   private toCsv(
     data: Array<Record<string, unknown>>,
     columns: string[],
@@ -194,9 +201,12 @@ export class DashboardService {
           const val = row[col];
           if (val === null || val === undefined) return '';
           const str = String(val);
-          return str.includes(',') || str.includes('"') || str.includes('\n')
-            ? `"${str.replace(/"/g, '""')}"`
-            : str;
+          const sanitized = this.sanitizeCsvValue(str);
+          return sanitized.includes(',') ||
+            sanitized.includes('"') ||
+            sanitized.includes('\n')
+            ? `"${sanitized.replace(/"/g, '""')}"`
+            : sanitized;
         })
         .join(','),
     );
