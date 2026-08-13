@@ -23,6 +23,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
         `HttpException [${status}]: ${JSON.stringify(response)}`,
       );
 
+      if (typeof response === 'string') {
+        return reply.status(status).send({
+          statusCode: status,
+          message: response,
+          error: HttpStatus[status] ?? 'Error',
+        });
+      }
       return reply.status(status).send(response);
     }
 

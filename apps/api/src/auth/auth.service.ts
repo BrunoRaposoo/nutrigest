@@ -1,4 +1,4 @@
-import { randomBytes } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import {
   BadRequestException,
   ConflictException,
@@ -16,6 +16,10 @@ import type { RefreshData } from './dto/refresh.dto';
 import type { RegisterData } from './dto/register.dto';
 import type { ResetPasswordData } from './dto/reset-password.dto';
 import type { UpdateProfileData } from './dto/update-profile.dto';
+
+function sha256(value: string): string {
+  return createHash('sha256').update(value, 'utf8').digest('hex');
+}
 
 @Injectable()
 export class AuthService {
@@ -179,11 +183,11 @@ export class AuthService {
     });
 
     const rawRefreshToken = randomBytes(48).toString('hex');
-    const refreshTokenHash = await bcrypt.hash(rawRefreshToken, 10);
+    const refreshTokenDigest = sha256(rawRefreshToken);
 
     await this.db.db.insert(refreshTokens).values({
       userId,
-      tokenHash: refreshTokenHash,
+      tokenDigest: refreshTokenDigest,
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     });
 
@@ -203,40 +207,53 @@ export class AuthService {
       };
     }
 
+    await this.db.db
+      .delete(passwordResetTokens)
+      .where(eq(passwordResetTokens.userId, user.id));
+
     const rawToken = randomBytes(48).toString('hex');
-    const tokenHash = await bcrypt.hash(rawToken, 10);
+    const tokenDigest = sha256(rawToken);
 
     await this.db.db.insert(passwordResetTokens).values({
       userId: user.id,
-      tokenHash,
+      tokenDigest,
       expiresAt: new Date(Date.now() + 60 * 60 * 1000),
     });
+
+    if (process.env.NODE_ENV === 'production') {
+      return {
+        message: 'If that email exists, a reset token has been generated',
+      };
+    }
 
     return { resetToken: rawToken };
   }
 
   async resetPassword(dto: ResetPasswordData) {
-    const storedTokens = await this.db.db
+    const [user] = await this.db.db
+      .select()
+      .from(users)
+      .where(eq(users.email, dto.email))
+      .limit(1);
+
+    if (!user) {
+      throw new BadRequestException('Invalid or expired reset token');
+    }
+
+    const [stored] = await this.db.db
       .select()
       .from(passwordResetTokens)
       .where(
         and(
+          eq(passwordResetTokens.tokenDigest, sha256(dto.token)),
+          eq(passwordResetTokens.userId, user.id),
           gt(passwordResetTokens.expiresAt, new Date()),
           isNull(passwordResetTokens.usedAt),
         ),
-      );
+      )
+      .limit(1);
 
-    let matchedToken: typeof passwordResetTokens.$inferSelect | null = null;
-
-    for (const stored of storedTokens) {
-      const isMatch = await bcrypt.compare(dto.token, stored.tokenHash);
-      if (isMatch) {
-        matchedToken = stored;
-        break;
-      }
-    }
-
-    if (!matchedToken) {
+    if (!stored) {
       throw new BadRequestException('Invalid or expired reset token');
     }
 
@@ -245,31 +262,27 @@ export class AuthService {
     await this.db.db
       .update(users)
       .set({ passwordHash })
-      .where(eq(users.id, matchedToken.userId));
+      .where(eq(users.id, user.id));
 
     await this.db.db
       .update(passwordResetTokens)
       .set({ usedAt: new Date() })
-      .where(eq(passwordResetTokens.id, matchedToken.id));
+      .where(eq(passwordResetTokens.id, stored.id));
 
     return { message: 'Password updated successfully' };
   }
 
   async refresh(dto: RefreshData) {
-    const storedTokens = await this.db.db
+    const [matchedToken] = await this.db.db
       .select()
       .from(refreshTokens)
-      .where(gt(refreshTokens.expiresAt, new Date()));
-
-    let matchedToken: typeof refreshTokens.$inferSelect | null = null;
-
-    for (const stored of storedTokens) {
-      const isMatch = await bcrypt.compare(dto.refreshToken, stored.tokenHash);
-      if (isMatch) {
-        matchedToken = stored;
-        break;
-      }
-    }
+      .where(
+        and(
+          eq(refreshTokens.tokenDigest, sha256(dto.refreshToken)),
+          gt(refreshTokens.expiresAt, new Date()),
+        ),
+      )
+      .limit(1);
 
     if (!matchedToken) {
       throw new UnauthorizedException('Invalid refresh token');
