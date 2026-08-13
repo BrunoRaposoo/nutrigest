@@ -1,3 +1,5 @@
+export * from './constants';
+
 export const ProductCategory = {
   BEVERAGE: 'BEVERAGE',
   MEAL: 'MEAL',

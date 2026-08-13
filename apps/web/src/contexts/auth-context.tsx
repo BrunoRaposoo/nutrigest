@@ -3,6 +3,7 @@ import {
   type ReactNode,
   useCallback,
   useContext,
+  useEffect,
   useState,
 } from 'react';
 import { api } from '../lib/api';
@@ -25,6 +26,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     'id' | 'name' | 'email' | 'role'
   > | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const accessToken = localStorage.getItem('accessToken');
+    if (!accessToken) return;
+    setIsLoading(true);
+
+    const hydrate = async () => {
+      try {
+        const { data } = await api.get<User>('/auth/me');
+        setUser({
+          id: data.id,
+          name: data.name,
+          email: data.email,
+          role: data.role,
+        });
+      } catch {
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        setUser(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void hydrate();
+  }, []);
 
   const login = useCallback(async (email: string, password: string) => {
     setIsLoading(true);

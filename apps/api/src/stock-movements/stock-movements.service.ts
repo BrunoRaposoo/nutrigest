@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { VALID_ROOMS } from '@nutrigest/shared';
 import { and, desc, eq, gte, lte, sql } from 'drizzle-orm';
 import { DbService } from '../db/db.service';
 import { centralStock } from '../db/schema/central-stock';
@@ -13,8 +14,6 @@ import type { CreateInMovementData } from './dto/create-in-movement.dto';
 import type { CreateMealOutMovementData } from './dto/create-meal-out-movement.dto';
 import type { CreateReplenishMovementData } from './dto/create-replenish-movement.dto';
 import type { ListMovementsData } from './dto/list-movements.dto';
-
-const VALID_ROOMS = Array.from({ length: 10 }, (_, i) => 101 + i);
 
 @Injectable()
 export class StockMovementsService {

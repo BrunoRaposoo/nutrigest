@@ -37,6 +37,11 @@ const tabs: Array<{ key: Tab; label: string }> = [
 export default function StockMovements() {
   const [tab, setTab] = useState<Tab>('rooms');
   const { data: movements, isLoading } = useMovements();
+  const { data: recentMeals, isLoading: isRecentMealsLoading } = useMovements({
+    type: 'MEAL_OUT',
+    page: 1,
+    limit: 5,
+  });
   const { data: products = [] } = useProducts();
 
   // IN tab state
@@ -163,10 +168,6 @@ export default function StockMovements() {
     if (filterRoom && mov.room !== Number(filterRoom)) return false;
     return true;
   });
-
-  const recentMeals = movements
-    ?.filter((m) => m.type === 'MEAL_OUT')
-    .slice(0, 5);
 
   return (
     <div className="space-y-6 transition-theme">
@@ -542,7 +543,19 @@ export default function StockMovements() {
               Registrar Retirada
             </Button>
 
-            {recentMeals && recentMeals.length > 0 && (
+            {isRecentMealsLoading ? (
+              <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                  Últimas retiradas
+                </h3>
+                <div className="space-y-2">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    /* biome-ignore lint/suspicious/noArrayIndexKey: skeleton loading placeholder */
+                    <Skeleton key={i} className="h-10 w-full rounded-lg" />
+                  ))}
+                </div>
+              </div>
+            ) : recentMeals && recentMeals.length > 0 ? (
               <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
                 <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                   Últimas retiradas
@@ -573,7 +586,7 @@ export default function StockMovements() {
                   ))}
                 </div>
               </div>
-            )}
+            ) : null}
           </CardContent>
         </Card>
       )}

@@ -323,37 +323,38 @@ Usar **incremento atômico no banco** em vez de ler-calcular-gravar:
 
 ## Solução
 
-- **16:** Batch de validação de produtos (query única com `IN`) e multi-row insert nas movimentações.
+- **16:** ~~Batch de validação de produtos (query única com `IN`) e multi-row insert nas movimentações.~~ **FORA DO ESCOPO** — decidido no brainstorm: não é "leve" (risco de regressão no fluxo transacional).
 - **17:** Adicionar `'/uploads'` ao `server.proxy` do Vite apontando para `http://localhost:3000`.
-- **18:** Extrair `VALID_ROOMS` e threshold de estoque baixo para constantes compartilhadas; usar nos dois services e no dashboard.
-- **19:** Criar `ProtectedRoute` (redireciona para `/login` se não autenticado) e envolver as rotas `/app`.
-- **20:** Usar relational queries (`db.query.stockMovements.findMany({ with: { product, user } })`) onde o Drizzle oferecer; remover `as any`.
+- **18:** Extrair `VALID_ROOMS` e threshold de estoque baixo para `packages/shared/src/constants.ts`; usar nos services do API.
+- **19:** Criar `ProtectedRoute` (redireciona para `/login` se não autenticado) + hydrate da sessão via `GET /auth/me` no `AuthProvider`; envolver as rotas `/app`.
+- **20:** ~~Usar relational queries... remover `as any`.~~ **MANTER `as any`** — decisão do usuário no brainstorm.
 - **21:** Usar hook de movimentações com filtro `type: 'MEAL_OUT', limit: 5` no servidor.
 - **22:** Trocar padrões duplicados por `getApiErrorMessage` (refactor pós-Etapa 2).
 
 ## Arquivos
 
-- Modify: `apps/api/src/stock-movements/stock-movements.service.ts` (batch, constants, relational)
-- Modify: `apps/api/src/minibar-standard/minibar-standard.service.ts` (constants)
+- Modify: `apps/api/src/stock-movements/stock-movements.service.ts` (constants)
+- Modify: `apps/api/src/minibar-standard/minibar-standard.service.ts` + `minibar-standard.controller.ts` (constants)
 - Modify: `apps/api/src/dashboard/dashboard.service.ts` (threshold)
-- Create/Modify: `apps/api/src/common/constants.ts`
+- Create: `packages/shared/src/constants.ts` (`VALID_ROOMS`, `LOW_STOCK_THRESHOLD`)
+- Modify: `apps/api/package.json` (dep `@nutrigest/shared: workspace:*`)
 - Modify: `apps/web/vite.config.ts`
-- Create: `apps/web/src/components/layout/protected-route.tsx` (ou equivalente)
-- Modify: `apps/web/src/routes.tsx`
+- Create: `apps/web/src/components/shared/protected-route.tsx` + `apps/web/src/routes.tsx`
+- Modify: `apps/web/src/contexts/auth-context.tsx` (hydrate `/auth/me`)
 - Modify: `apps/web/src/pages/app/stock-movements.tsx` (recentMeals server-side)
-- Modify: `apps/web/src/hooks/queries/use-movement-queries.ts`
+- Modify: `apps/web/src/pages/auth/forgot-password.tsx` + `reset-password.tsx` (getApiErrorMessage)
 
 ## Passos de execução
 
-- [ ] **Passo 1 — Constantes compartilhadas:** extrair `VALID_ROOMS` + threshold; usar nos 3 services.
-- [ ] **Passo 2 — Proxy /uploads** no Vite; verificar imagem de produto em dev.
-- [ ] **Passo 3 — ProtectedRoute** nas rotas `/app`.
-- [ ] **Passo 4 — Batch queries** no createIn/createReplenish.
-- [ ] **Passo 5 — recentMeals server-side.**
-- [ ] **Passo 6 — Relational queries** (remover `as any`) — apenas onde o retorno dos testes e2e não muda.
-- [ ] **Passo 7 — Verificar:** `pnpm lint`, `pnpm build:api`, `pnpm build:web`, testes.
-- [ ] **Passo 8 — Commit:** atômicos por tema.
-- [ ] **Passo 9 — Usuário testa manualmente; autoriza push + PR.**
+- [x] **Passo 1 — Constantes compartilhadas:** extrair `VALID_ROOMS` + threshold em `packages/shared/src/constants.ts`; usar nos services. (`1975538`)
+- [x] **Passo 2 — Proxy /uploads** no Vite. (`08f09d6`)
+- [x] **Passo 3 — ProtectedRoute** nas rotas `/app` + hydrate de sessão. (`4a11cfb`)
+- [x] ~~**Passo 4 — Batch queries**~~ **FORA DO ESCOPO** (ver Solução 16).
+- [x] **Passo 5 — recentMeals server-side** com `type=MEAL_OUT&limit=5`. (`e72b45a`)
+- [x] ~~**Passo 6 — Relational queries**~~ **MANTER `as any`** (decisão do usuário).
+- [x] **Passo 7 — Verificar:** `pnpm lint`, `pnpm build:api`, `pnpm build:web`, testes (unit API 136, e2e API 127, web 45).
+- [x] **Passo 8 — Commit:** atômicos por tema.
+- [ ] **Passo 9 — Usuário testa manualmente; autoriza push + PR** (agente não faz push/PR).
 
 ---
 

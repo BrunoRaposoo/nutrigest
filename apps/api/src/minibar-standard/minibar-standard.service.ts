@@ -1,12 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { VALID_ROOMS } from '@nutrigest/shared';
 import { and, eq } from 'drizzle-orm';
 import { DbService } from '../db/db.service';
 import { minibarStandard } from '../db/schema/minibar-standard';
 import { products } from '../db/schema/products';
 import type { AddMinibarItemData } from './dto/add-minibar-item.dto';
 import type { UpdateMinibarItemData } from './dto/update-minibar-item.dto';
-
-const VALID_ROOMS = Array.from({ length: 10 }, (_, i) => 101 + i);
 
 @Injectable()
 export class MinibarStandardService {
