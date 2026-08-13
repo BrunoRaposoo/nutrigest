@@ -4,7 +4,6 @@ import { DbService } from '../db/db.service';
 import { centralStock } from '../db/schema/central-stock';
 import { products } from '../db/schema/products';
 import { stockMovements } from '../db/schema/stock-movements';
-import { ProductsService } from '../products/products.service';
 import { StockMovementsService } from '../stock-movements/stock-movements.service';
 import type { ChartsQueryData } from './dto/charts-query.dto';
 import type { ConsumptionReportData } from './dto/consumption-report.dto';
@@ -14,14 +13,15 @@ import type { StockHistoryData } from './dto/stock-history.dto';
 @Injectable()
 export class DashboardService {
   constructor(
-    private productsService: ProductsService,
     private stockMovementsService: StockMovementsService,
     private db: DbService,
   ) {}
 
   async getSummary() {
-    const allProducts = await this.productsService.findAll();
-    const totalProducts = allProducts.length;
+    const [countResult] = await this.db.db
+      .select({ count: sql<number>`count(*)` })
+      .from(products);
+    const totalProducts = Number(countResult?.count ?? 0);
 
     const [stockSum] = await this.db.db
       .select({

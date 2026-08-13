@@ -56,6 +56,15 @@ describe('DashboardService', () => {
       expect(Array.isArray(result.recentMovements)).toBe(true);
     });
 
+    it('should not load all products just to count them', async () => {
+      const findAllSpy = jest.spyOn(productsService, 'findAll');
+      const result = await service.getSummary();
+
+      expect(findAllSpy).not.toHaveBeenCalled();
+      expect(typeof result.totalProducts).toBe('number');
+      findAllSpy.mockRestore();
+    });
+
     it('should only include products with quantity <= 5 in lowStockAlerts', async () => {
       const allProducts = await productsService.findAll();
       if (allProducts.length === 0) return;
