@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { AppLayout } from './components/layout/app-layout';
 import { AuthLayout } from './components/layout/auth-layout';
 import { PublicLayout } from './components/layout/public-layout';
+import { ProtectedRoute } from './components/shared/protected-route';
 import CentralStock from './pages/app/central-stock';
 import Dashboard from './pages/app/dashboard';
 import MinibarStandard from './pages/app/minibar-standard';
@@ -33,16 +34,21 @@ export const router = createBrowserRouter([
   },
   {
     path: '/app',
-    element: <AppLayout />,
+    element: <ProtectedRoute />,
     children: [
-      { index: true, element: <Navigate to="/app/dashboard" replace /> },
-      { path: 'dashboard', element: <Dashboard /> },
-      { path: 'produtos', element: <Products /> },
-      { path: 'estoque-central', element: <CentralStock /> },
-      { path: 'padrao-frigobar', element: <MinibarStandard /> },
-      { path: 'movimentacoes', element: <StockMovements /> },
-      { path: 'usuarios', element: <Users /> },
-      { path: 'perfil', element: <Profile /> },
+      {
+        element: <AppLayout />,
+        children: [
+          { index: true, element: <Navigate to="/app/dashboard" replace /> },
+          { path: 'dashboard', element: <Dashboard /> },
+          { path: 'produtos', element: <Products /> },
+          { path: 'estoque-central', element: <CentralStock /> },
+          { path: 'padrao-frigobar', element: <MinibarStandard /> },
+          { path: 'movimentacoes', element: <StockMovements /> },
+          { path: 'usuarios', element: <Users /> },
+          { path: 'perfil', element: <Profile /> },
+        ],
+      },
     ],
   },
   { path: '*', element: <NotFound /> },
