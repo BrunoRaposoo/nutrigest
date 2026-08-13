@@ -208,6 +208,85 @@ describe('Users (e2e)', () => {
       });
       expect(checkRes.statusCode).toBe(404);
     });
+
+    it('should reject deleting your own user', async () => {
+      const admin = await registerAndLogin(app, 'ADMIN');
+
+      const meRes = await app.inject({
+        method: 'GET',
+        url: '/auth/me',
+        headers: { authorization: `Bearer ${admin.accessToken}` },
+      });
+      const me = JSON.parse(meRes.body);
+
+      const res = await app.inject({
+        method: 'DELETE',
+        url: `/users/${me.id}`,
+        headers: { authorization: `Bearer ${admin.accessToken}` },
+      });
+
+      expect(res.statusCode).toBe(400);
+    });
+
+    it('should reject deleting a user with stock movements', async () => {
+      const admin = await registerAndLogin(app, 'ADMIN');
+
+      const createUserRes = await app.inject({
+        method: 'POST',
+        url: '/users',
+        headers: { authorization: `Bearer ${admin.accessToken}` },
+        payload: {
+          name: 'Has Movements',
+          email: `e2e-delete-mov-${Date.now()}@example.com`,
+          password: 'password123',
+          role: 'TECHNICIAN',
+        },
+      });
+      const createdUser = JSON.parse(createUserRes.body);
+
+      const createProductRes = await app.inject({
+        method: 'POST',
+        url: '/products',
+        headers: { authorization: `Bearer ${admin.accessToken}` },
+        payload: { name: 'Mov Product', category: 'BEVERAGE' },
+      });
+      const createdProduct = JSON.parse(createProductRes.body);
+
+      await app.inject({
+        method: 'PATCH',
+        url: `/central-stock/${createdProduct.id}`,
+        headers: { authorization: `Bearer ${admin.accessToken}` },
+        payload: { quantity: 100 },
+      });
+
+      const loginUserRes = await app.inject({
+        method: 'POST',
+        url: '/auth/login',
+        payload: {
+          email: createdUser.email,
+          password: 'password123',
+        },
+      });
+      const { accessToken: userToken } = JSON.parse(loginUserRes.body);
+
+      await app.inject({
+        method: 'POST',
+        url: '/stock-movements/in',
+        headers: { authorization: `Bearer ${userToken}` },
+        payload: {
+          items: [{ productId: createdProduct.id, quantity: 10 }],
+          description: 'e2e user movements',
+        },
+      });
+
+      const res = await app.inject({
+        method: 'DELETE',
+        url: `/users/${createdUser.id}`,
+        headers: { authorization: `Bearer ${admin.accessToken}` },
+      });
+
+      expect(res.statusCode).toBe(400);
+    });
   });
 
   describe('RBAC - role-based access', () => {

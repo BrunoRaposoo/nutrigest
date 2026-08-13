@@ -296,6 +296,43 @@ describe('Products (e2e)', () => {
         payload: { quantity: 0 },
       });
     });
+
+    it('should reject delete when product has stock movements', async () => {
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
+
+      const createRes = await app.inject({
+        method: 'POST',
+        url: '/products',
+        headers: { authorization: `Bearer ${accessToken}` },
+        payload: { name: 'Movement Protect', category: 'BEVERAGE' },
+      });
+      const created = JSON.parse(createRes.body);
+
+      await app.inject({
+        method: 'PATCH',
+        url: `/central-stock/${created.id}`,
+        headers: { authorization: `Bearer ${accessToken}` },
+        payload: { quantity: 100 },
+      });
+
+      await app.inject({
+        method: 'POST',
+        url: '/stock-movements/in',
+        headers: { authorization: `Bearer ${accessToken}` },
+        payload: {
+          items: [{ productId: created.id, quantity: 10 }],
+          description: 'e2e movement protect',
+        },
+      });
+
+      const res = await app.inject({
+        method: 'DELETE',
+        url: `/products/${created.id}`,
+        headers: { authorization: `Bearer ${accessToken}` },
+      });
+
+      expect(res.statusCode).toBe(400);
+    });
   });
 
   describe('/products/:id/image (POST) - upload image', () => {

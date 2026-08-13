@@ -234,7 +234,7 @@ Usar **incremento atômico no banco** em vez de ler-calcular-gravar:
 
 ---
 
-# Etapa 5 — Índices, count no summary, CSV injection, deletes amigáveis, senha atual no perfil
+# Etapa 5 — Índices, count no summary, CSV injection, deletes amigáveis, senha atual no perfil ✅ concluída
 
 **Branch:** `fix/db-indexes-and-data-integrity`
 
@@ -277,14 +277,27 @@ Usar **incremento atômico no banco** em vez de ler-calcular-gravar:
 
 ## Passos de execução
 
-- [ ] **Passo 1 — TDD:** testes de CSV injection, count, auto-delete, senha atual errada. Ver falhar.
-- [ ] **Passo 2 — Implementar:** sanitize CSV + count no summary.
-- [ ] **Passo 3 — Implementar:** validação de currentPassword no perfil.
-- [ ] **Passo 4 — Implementar:** deletes com dependência + proteção de auto-delete + filtro 23503.
-- [ ] **Passo 5 — Implementar:** migração de índices (`drizzle-kit generate` + aplicar em `dev` e `test`).
-- [ ] **Passo 6 — Verificar:** `pnpm lint`, `pnpm build:api`, testes API + e2e (migração no banco de teste).
-- [ ] **Passo 7 — Commit:** atômicos por tema.
+- [x] **Passo 1 — TDD:** testes de CSV injection, count, auto-delete, senha atual errada. Ver falhar.
+- [x] **Passo 2 — Implementar:** sanitize CSV + count no summary.
+- [x] **Passo 3 — Implementar:** validação de currentPassword no perfil.
+- [x] **Passo 4 — Implementar:** deletes com dependência + proteção de auto-delete + filtro 23503.
+- [x] **Passo 5 — Implementar:** migração de índices (`drizzle-kit generate` + aplicar em `dev` e `test`).
+- [x] **Passo 6 — Verificar:** `pnpm lint`, `pnpm build:api`, testes API + e2e (migração no banco de teste).
+- [x] **Passo 7 — Commit:** atômicos por tema.
 - [ ] **Passo 8 — Usuário testa manualmente; autoriza push + PR.**
+
+## Notas de implementação (Etapa 5)
+
+- Decisões do brainstorm: **verificação prévia** (não soft-delete/cascade) para deletes com dependência; **prefijo `'`** para CSV injection; `currentPassword` **obrigatório** quando `password` presente; **impedir auto-delete**; **filtro 23503 → 409** no `AllExceptionsFilter`; índices de **coluna única**.
+- Commits (branch `fix/db-integrity-and-security`):
+  - `e3e69fe` fix: sanitize CSV export against formula injection
+  - `df3d200` fix: use count instead of findAll for product total
+  - `14b7152` fix: require current password to change password
+  - `681ecaa` fix: check dependencies before user/product delete
+  - `4d69414` fix: add database indexes for stock_movements and token lookups
+- Migração `0011_add-performance-indexes.sql` (6 índices) aplicada em `dev` e `nutrigest_test`.
+- Verificação: unit **136** (10 suites), e2e **127** (8 suites), web **31** (6 suites), `pnpm lint` limpo, builds ok.
+- Decisão de produto adiada (Etapa 4): falha de rede durante refresh → logout forçado (aguarda usuário).
 
 ---
 
@@ -347,7 +360,6 @@ Usar **incremento atômico no banco** em vez de ler-calcular-gravar:
 ## Decisões em aberto (resolver no brainstorm de cada etapa)
 
 - **Etapa 4:** formato do reset token (e-mail/log) — não há infra de e-mail hoje.
-- **Etapa 5:** deletes com dependência — soft-delete vs. checagem prévia com mensagem amigável.
 - **Etapa 5:** adicionar job de limpeza de tokens expirados? (pode ir para o TODO futuro).
 
 ## Após a Etapa 6 (fora do escopo desta leva)

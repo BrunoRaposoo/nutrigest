@@ -7,7 +7,7 @@ import {
 import { eq } from 'drizzle-orm';
 import { CentralStockService } from '../central-stock/central-stock.service';
 import { DbService } from '../db/db.service';
-import { products } from '../db/schema';
+import { products, stockMovements } from '../db/schema';
 import {
   STORAGE_SERVICE,
   type StorageService,
@@ -100,6 +100,18 @@ export class ProductsService {
     if (stockQty > 0) {
       throw new BadRequestException(
         'Cannot delete product with existing stock. Adjust stock first.',
+      );
+    }
+
+    const [movement] = await this.db.db
+      .select({ id: stockMovements.id })
+      .from(stockMovements)
+      .where(eq(stockMovements.productId, id))
+      .limit(1);
+
+    if (movement) {
+      throw new BadRequestException(
+        'Não é possível excluir este produto: existem movimentações de estoque registradas',
       );
     }
 

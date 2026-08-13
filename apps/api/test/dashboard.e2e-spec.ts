@@ -227,6 +227,49 @@ describe('Dashboard (e2e)', () => {
       expect(res.statusCode).toBe(200);
       expect(res.body).toContain('room,product,quantity');
     });
+
+    it('should sanitize formula-injection product names', async () => {
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
+
+      const createRes = await app.inject({
+        method: 'POST',
+        url: '/products',
+        headers: { authorization: `Bearer ${accessToken}` },
+        payload: { name: '=SUM(A1:A2)', category: 'BEVERAGE' },
+      });
+      const product = JSON.parse(createRes.body);
+
+      await app.inject({
+        method: 'PATCH',
+        url: `/central-stock/${product.id}`,
+        headers: { authorization: `Bearer ${accessToken}` },
+        payload: { quantity: 100 },
+      });
+
+      await app.inject({
+        method: 'POST',
+        url: '/stock-movements/replenish/105',
+        headers: { authorization: `Bearer ${accessToken}` },
+        payload: {
+          items: [
+            {
+              productId: product.id,
+              consumedQuantity: 5,
+              restockedQuantity: 5,
+            },
+          ],
+        },
+      });
+
+      const res = await app.inject({
+        method: 'GET',
+        url: '/dashboard/consumption-by-room/csv',
+        headers: { authorization: `Bearer ${accessToken}` },
+      });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toContain("'=SUM(A1:A2)");
+    });
   });
 
   describe('GET /dashboard/meal-ranking/csv', () => {

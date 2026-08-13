@@ -152,6 +152,23 @@ export class AuthService {
     if (dto.name) values.name = dto.name;
     if (dto.email) values.email = dto.email;
     if (dto.password) {
+      if (!dto.currentPassword) {
+        throw new BadRequestException(
+          'Senha atual é obrigatória para alterar a senha',
+        );
+      }
+      const isCurrentValid = await bcrypt.compare(
+        dto.currentPassword,
+        existing.passwordHash,
+      );
+      if (!isCurrentValid) {
+        throw new UnauthorizedException('Senha atual incorreta');
+      }
+      if (dto.currentPassword === dto.password) {
+        throw new BadRequestException(
+          'A nova senha não pode ser igual à atual',
+        );
+      }
       values.passwordHash = await bcrypt.hash(dto.password, 10);
     }
 
