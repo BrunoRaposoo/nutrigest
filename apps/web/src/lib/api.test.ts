@@ -6,6 +6,7 @@ interface MockedRoutes {
   refreshCount: number;
   refreshFail: boolean;
   protectedCalls: number;
+  protectedFailures: number;
 }
 
 function installMockAdapter(routes: MockedRoutes) {
@@ -30,7 +31,7 @@ function installMockAdapter(routes: MockedRoutes) {
     }
 
     routes.protectedCalls += 1;
-    if (routes.protectedCalls === 1) {
+    if (routes.protectedCalls <= routes.protectedFailures) {
       throw {
         config,
         response: { status: 401, data: { message: 'Unauthorized' } },
@@ -56,6 +57,7 @@ describe('silent refresh interceptor', () => {
       refreshCount: 0,
       refreshFail: false,
       protectedCalls: 0,
+      protectedFailures: 1,
     };
     installMockAdapter(routes);
     localStorage.setItem('accessToken', 'old-access');
@@ -75,6 +77,7 @@ describe('silent refresh interceptor', () => {
       refreshCount: 0,
       refreshFail: false,
       protectedCalls: 0,
+      protectedFailures: 3,
     };
     installMockAdapter(routes);
     localStorage.setItem('accessToken', 'old-access');
@@ -87,8 +90,33 @@ describe('silent refresh interceptor', () => {
     ]);
 
     expect(results.every((r) => r.status === 200)).toBe(true);
+    expect(routes.protectedCalls).toBe(6);
     expect(routes.refreshCount).toBe(1);
     expect(localStorage.getItem('accessToken')).toBe('new-access');
+  });
+
+  it('deduplicates concurrent 401s into one refresh and clears the session when it fails', async () => {
+    const routes: MockedRoutes = {
+      refreshCount: 0,
+      refreshFail: true,
+      protectedCalls: 0,
+      protectedFailures: 3,
+    };
+    installMockAdapter(routes);
+    localStorage.setItem('accessToken', 'old-access');
+    localStorage.setItem('refreshToken', 'old-refresh');
+
+    await expect(
+      Promise.all([
+        api.get('/protected'),
+        api.get('/protected'),
+        api.get('/protected'),
+      ]),
+    ).rejects.toBeDefined();
+
+    expect(routes.refreshCount).toBe(1);
+    expect(localStorage.getItem('accessToken')).toBeNull();
+    expect(localStorage.getItem('refreshToken')).toBeNull();
   });
 
   it('clears session and redirects, and does not retry, when refresh fails', async () => {
@@ -96,6 +124,7 @@ describe('silent refresh interceptor', () => {
       refreshCount: 0,
       refreshFail: true,
       protectedCalls: 0,
+      protectedFailures: 1,
     };
     installMockAdapter(routes);
     localStorage.setItem('accessToken', 'old-access');
@@ -113,6 +142,7 @@ describe('silent refresh interceptor', () => {
       refreshCount: 0,
       refreshFail: false,
       protectedCalls: 0,
+      protectedFailures: 1,
     };
     api.defaults.adapter = async (
       config: InternalAxiosRequestConfig,

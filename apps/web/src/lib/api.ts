@@ -66,7 +66,10 @@ async function handleUnauthorized(error: AxiosError): Promise<AxiosResponse> {
 
   isRefreshing = true;
   try {
-    const { data } = await api.post('/auth/refresh', { refreshToken });
+    const { data } = await api.post<{
+      accessToken: string;
+      refreshToken: string;
+    }>('/auth/refresh', { refreshToken });
     localStorage.setItem('accessToken', data.accessToken);
     localStorage.setItem('refreshToken', data.refreshToken);
 
