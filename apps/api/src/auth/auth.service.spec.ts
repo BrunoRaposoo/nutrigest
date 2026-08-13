@@ -158,6 +158,72 @@ describe('AuthService', () => {
     ).rejects.toThrow(UnauthorizedException);
   });
 
+  describe('updateProfile', () => {
+    async function createUser() {
+      const email = `profile-${Date.now()}-${Math.random()}@example.com`;
+      return service.register({
+        name: 'Profile Test',
+        email,
+        password: 'password123',
+      });
+    }
+
+    it('should update name without password', async () => {
+      const user = await createUser();
+
+      const result = await service.updateProfile(user.id, { name: 'New Name' });
+
+      expect(result.name).toBe('New Name');
+    });
+
+    it('should change password when currentPassword is correct', async () => {
+      const user = await createUser();
+
+      const result = await service.updateProfile(user.id, {
+        password: 'newpassword456',
+        currentPassword: 'password123',
+      });
+
+      expect(result).toHaveProperty('id');
+
+      const loginResult = await service.login({
+        email: user.email,
+        password: 'newpassword456',
+      });
+      expect(loginResult).toHaveProperty('accessToken');
+    });
+
+    it('should reject changing password without currentPassword', async () => {
+      const user = await createUser();
+
+      await expect(
+        service.updateProfile(user.id, { password: 'newpassword456' }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject changing password with wrong currentPassword', async () => {
+      const user = await createUser();
+
+      await expect(
+        service.updateProfile(user.id, {
+          password: 'newpassword456',
+          currentPassword: 'wrongpassword',
+        }),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should reject a new password equal to the current password', async () => {
+      const user = await createUser();
+
+      await expect(
+        service.updateProfile(user.id, {
+          password: 'password123',
+          currentPassword: 'password123',
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
+
   describe('forgotPassword', () => {
     it('should generate reset token for existing user', async () => {
       const email = `forgot-${Date.now()}@example.com`;

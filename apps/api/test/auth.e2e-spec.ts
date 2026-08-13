@@ -504,7 +504,10 @@ describe('Auth (e2e)', () => {
         method: 'PATCH',
         url: '/auth/me',
         headers: { authorization: `Bearer ${accessToken}` },
-        payload: { password: 'newpassword456' },
+        payload: {
+          password: 'newpassword456',
+          currentPassword: 'password123',
+        },
       });
 
       expect(res.statusCode).toBe(200);
@@ -524,6 +527,61 @@ describe('Auth (e2e)', () => {
       });
 
       expect(oldLoginRes.statusCode).toBe(401);
+    });
+
+    it('should reject password change without currentPassword', async () => {
+      const email = `e2e-me-pw-missing-${Date.now()}@example.com`;
+
+      await app.inject({
+        method: 'POST',
+        url: '/auth/register',
+        payload: { name: 'Me PW Missing', email, password: 'password123' },
+      });
+
+      const loginRes = await app.inject({
+        method: 'POST',
+        url: '/auth/login',
+        payload: { email, password: 'password123' },
+      });
+      const { accessToken } = JSON.parse(loginRes.body);
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: '/auth/me',
+        headers: { authorization: `Bearer ${accessToken}` },
+        payload: { password: 'newpassword456' },
+      });
+
+      expect(res.statusCode).toBe(400);
+    });
+
+    it('should reject password change with wrong currentPassword', async () => {
+      const email = `e2e-me-pw-wrong-${Date.now()}@example.com`;
+
+      await app.inject({
+        method: 'POST',
+        url: '/auth/register',
+        payload: { name: 'Me PW Wrong', email, password: 'password123' },
+      });
+
+      const loginRes = await app.inject({
+        method: 'POST',
+        url: '/auth/login',
+        payload: { email, password: 'password123' },
+      });
+      const { accessToken } = JSON.parse(loginRes.body);
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: '/auth/me',
+        headers: { authorization: `Bearer ${accessToken}` },
+        payload: {
+          password: 'newpassword456',
+          currentPassword: 'wrongpassword',
+        },
+      });
+
+      expect(res.statusCode).toBe(401);
     });
   });
 });
