@@ -2,6 +2,7 @@ import 'dotenv/config';
 
 import { existsSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
+import helmet from '@fastify/helmet';
 import fastifyMultipart from '@fastify/multipart';
 import fastifyStatic from '@fastify/static';
 import { NestFactory } from '@nestjs/core';
@@ -15,7 +16,7 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
-    new NutrigestFastifyAdapter({ logger: true }),
+    new NutrigestFastifyAdapter({ logger: true, trustProxy: true }),
   );
 
   app.setGlobalPrefix('api');
@@ -24,6 +25,8 @@ async function bootstrap() {
     origin: process.env.CORS_ORIGIN ?? 'http://localhost:5173',
     credentials: true,
   });
+
+  await app.register(helmet, { contentSecurityPolicy: false });
 
   const uploadsDir = join(process.cwd(), process.env.UPLOAD_DIR || 'uploads');
   if (!existsSync(uploadsDir)) {

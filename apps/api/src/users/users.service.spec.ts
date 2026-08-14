@@ -1,6 +1,12 @@
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { DbService } from '../db/db.service';
+import { products } from '../db/schema/products';
+import { stockMovements } from '../db/schema/stock-movements';
 import { UsersService } from './users.service';
 
 describe('UsersService', () => {
@@ -162,7 +168,7 @@ describe('UsersService', () => {
         password: 'password123',
       });
 
-      const result = await service.remove(created.id);
+      const result = await service.remove(created.id, 'some-other-user-id');
       expect(result).toHaveProperty('message');
 
       await expect(service.findOne(created.id)).rejects.toThrow(
@@ -170,9 +176,48 @@ describe('UsersService', () => {
       );
     });
 
+    it('should reject deleting the current user', async () => {
+      const created = await service.create({
+        name: 'Self Delete',
+        email: `self-delete-${Date.now()}@example.com`,
+        password: 'password123',
+      });
+
+      await expect(service.remove(created.id, created.id)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should reject deleting a user with stock movements', async () => {
+      const created = await service.create({
+        name: 'Has Movements',
+        email: `has-movements-${Date.now()}@example.com`,
+        password: 'password123',
+      });
+
+      const [product] = await db.db
+        .insert(products)
+        .values({ name: 'Mov Product', category: 'BEVERAGE' })
+        .returning({ id: products.id });
+
+      await db.db.insert(stockMovements).values({
+        type: 'IN',
+        productId: product.id,
+        quantity: 10,
+        userId: created.id,
+      });
+
+      await expect(
+        service.remove(created.id, 'some-other-user-id'),
+      ).rejects.toThrow(BadRequestException);
+    });
+
     it('should throw NotFoundException for invalid id', async () => {
       await expect(
-        service.remove('00000000-0000-0000-0000-000000000000'),
+        service.remove(
+          '00000000-0000-0000-0000-000000000000',
+          'some-other-user-id',
+        ),
       ).rejects.toThrow(NotFoundException);
     });
   });

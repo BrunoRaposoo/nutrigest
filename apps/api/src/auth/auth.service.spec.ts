@@ -6,7 +6,7 @@ import {
 import { JwtModule } from '@nestjs/jwt';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { DbService } from '../db/db.service';
-import { refreshTokens } from '../db/schema';
+import { passwordResetTokens, refreshTokens } from '../db/schema';
 import { AuthService } from './auth.service';
 
 describe('AuthService', () => {
@@ -26,6 +26,7 @@ describe('AuthService', () => {
 
   afterEach(async () => {
     await db.db.delete(refreshTokens);
+    await db.db.delete(passwordResetTokens);
   });
 
   afterAll(async () => {
@@ -37,13 +38,22 @@ describe('AuthService', () => {
       name: 'Test User',
       email: `test-${Date.now()}@example.com`,
       password: 'password123',
-      role: 'OPERATOR',
     });
 
     expect(result).toHaveProperty('id');
     expect(result.email).toContain('test-');
     expect(result.role).toBe('OPERATOR');
     expect(result).not.toHaveProperty('passwordHash');
+  });
+
+  it('should always register users with OPERATOR role', async () => {
+    const result = await service.register({
+      name: 'Role Escalation',
+      email: `role-${Date.now()}@example.com`,
+      password: 'password123',
+    });
+
+    expect(result.role).toBe('OPERATOR');
   });
 
   it('should reject duplicate email', async () => {
@@ -148,6 +158,72 @@ describe('AuthService', () => {
     ).rejects.toThrow(UnauthorizedException);
   });
 
+  describe('updateProfile', () => {
+    async function createUser() {
+      const email = `profile-${Date.now()}-${Math.random()}@example.com`;
+      return service.register({
+        name: 'Profile Test',
+        email,
+        password: 'password123',
+      });
+    }
+
+    it('should update name without password', async () => {
+      const user = await createUser();
+
+      const result = await service.updateProfile(user.id, { name: 'New Name' });
+
+      expect(result.name).toBe('New Name');
+    });
+
+    it('should change password when currentPassword is correct', async () => {
+      const user = await createUser();
+
+      const result = await service.updateProfile(user.id, {
+        password: 'newpassword456',
+        currentPassword: 'password123',
+      });
+
+      expect(result).toHaveProperty('id');
+
+      const loginResult = await service.login({
+        email: user.email,
+        password: 'newpassword456',
+      });
+      expect(loginResult).toHaveProperty('accessToken');
+    });
+
+    it('should reject changing password without currentPassword', async () => {
+      const user = await createUser();
+
+      await expect(
+        service.updateProfile(user.id, { password: 'newpassword456' }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject changing password with wrong currentPassword', async () => {
+      const user = await createUser();
+
+      await expect(
+        service.updateProfile(user.id, {
+          password: 'newpassword456',
+          currentPassword: 'wrongpassword',
+        }),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should reject a new password equal to the current password', async () => {
+      const user = await createUser();
+
+      await expect(
+        service.updateProfile(user.id, {
+          password: 'password123',
+          currentPassword: 'password123',
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
+
   describe('forgotPassword', () => {
     it('should generate reset token for existing user', async () => {
       const email = `forgot-${Date.now()}@example.com`;
@@ -246,6 +322,7 @@ describe('AuthService', () => {
       };
 
       const result = await service.resetPassword({
+        email,
         token: resetToken,
         password: 'newpassword456',
       });
@@ -263,6 +340,7 @@ describe('AuthService', () => {
     it('should reject invalid token', async () => {
       await expect(
         service.resetPassword({
+          email: 'nonexistent@example.com',
           token: 'invalid-token',
           password: 'newpassword456',
         }),
@@ -283,16 +361,66 @@ describe('AuthService', () => {
       };
 
       await service.resetPassword({
+        email,
         token: resetToken,
         password: 'newpassword456',
       });
 
       await expect(
         service.resetPassword({
+          email,
           token: resetToken,
           password: 'anotherpassword',
         }),
       ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject a valid token bound to a different email', async () => {
+      const email = `reset-other-${Date.now()}@example.com`;
+
+      await service.register({
+        name: 'Reset Other',
+        email,
+        password: 'password123',
+      });
+
+      const { resetToken } = (await service.forgotPassword({ email })) as {
+        resetToken: string;
+      };
+
+      await expect(
+        service.resetPassword({
+          email: 'someone-else@example.com',
+          token: resetToken,
+          password: 'newpassword456',
+        }),
+      ).rejects.toThrow(BadRequestException);
+
+      const loginResult = await service.login({
+        email,
+        password: 'password123',
+      });
+      expect(loginResult).toHaveProperty('accessToken');
+    });
+
+    it('should not expose resetToken in production', async () => {
+      const email = `reset-prod-${Date.now()}@example.com`;
+
+      await service.register({
+        name: 'Reset Prod',
+        email,
+        password: 'password123',
+      });
+
+      const previousEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'production';
+      try {
+        const result = await service.forgotPassword({ email });
+        expect(result).not.toHaveProperty('resetToken');
+        expect(result).toHaveProperty('message');
+      } finally {
+        process.env.NODE_ENV = previousEnv;
+      }
     });
   });
 });

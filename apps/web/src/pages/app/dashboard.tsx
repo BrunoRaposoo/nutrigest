@@ -8,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from '../../components/ui/card';
+import { ErrorBanner } from '../../components/ui/error-banner';
 import { Input } from '../../components/ui/input';
 import { Select } from '../../components/ui/select';
 import { Skeleton } from '../../components/ui/skeleton';
@@ -45,19 +46,36 @@ export default function Dashboard() {
   const {
     download: downloadConsumptionCsv,
     isDownloading: isConsumptionCsvLoading,
+    error: consumptionCsvError,
   } = useConsumptionByRoomCsv(consumptionFrom, consumptionTo);
   const {
     download: downloadConsumptionPdf,
     isDownloading: isConsumptionPdfLoading,
+    error: consumptionPdfError,
   } = useConsumptionByRoomPdf(consumptionFrom, consumptionTo);
-  const { download: downloadRankingCsv, isDownloading: isRankingCsvLoading } =
-    useMealRankingCsv(rankingFrom, rankingTo, rankingLimit);
-  const { download: downloadRankingPdf, isDownloading: isRankingPdfLoading } =
-    useMealRankingPdf(rankingFrom, rankingTo, rankingLimit);
-  const { download: downloadHistoryCsv, isDownloading: isHistoryCsvLoading } =
-    useStockHistoryCsv(historyProductId, historyFrom, historyTo);
-  const { download: downloadHistoryPdf, isDownloading: isHistoryPdfLoading } =
-    useStockHistoryPdf(historyProductId, historyFrom, historyTo);
+  const {
+    download: downloadRankingCsv,
+    isDownloading: isRankingCsvLoading,
+    error: rankingCsvError,
+  } = useMealRankingCsv(rankingFrom, rankingTo, rankingLimit);
+  const {
+    download: downloadRankingPdf,
+    isDownloading: isRankingPdfLoading,
+    error: rankingPdfError,
+  } = useMealRankingPdf(rankingFrom, rankingTo, rankingLimit);
+  const {
+    download: downloadHistoryCsv,
+    isDownloading: isHistoryCsvLoading,
+    error: historyCsvError,
+  } = useStockHistoryCsv(historyProductId, historyFrom, historyTo);
+  const {
+    download: downloadHistoryPdf,
+    isDownloading: isHistoryPdfLoading,
+    error: historyPdfError,
+  } = useStockHistoryPdf(historyProductId, historyFrom, historyTo);
+
+  const renderDownloadError = (message: string | null) =>
+    message ? <ErrorBanner message={message} /> : null;
 
   if (summaryLoading) {
     return (
@@ -320,6 +338,7 @@ export default function Dashboard() {
             </p>
           </CardHeader>
           <CardContent className="space-y-3">
+            {renderDownloadError(consumptionCsvError || consumptionPdfError)}
             <div className="flex gap-2">
               <Input
                 type="date"
@@ -363,6 +382,7 @@ export default function Dashboard() {
             </p>
           </CardHeader>
           <CardContent className="space-y-3">
+            {renderDownloadError(rankingCsvError || rankingPdfError)}
             <div className="flex gap-2">
               <Input
                 type="date"
@@ -417,6 +437,7 @@ export default function Dashboard() {
             </p>
           </CardHeader>
           <CardContent className="space-y-3">
+            {renderDownloadError(historyCsvError || historyPdfError)}
             <Select
               label="Produto"
               placeholder="Selecione um produto"

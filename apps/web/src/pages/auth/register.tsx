@@ -13,6 +13,7 @@ import {
 import { Input } from '../../components/ui/input';
 import { PasswordInput } from '../../components/ui/password-input';
 import { useAuth } from '../../contexts/auth-context';
+import { getApiErrorMessage } from '../../lib/api-error';
 
 const registerSchema = z
   .object({
@@ -47,12 +48,7 @@ export default function Register() {
       await registerUser(data.name, data.email, data.password);
       navigate('/login', { state: { registered: true } });
     } catch (err: unknown) {
-      const msg =
-        err && typeof err === 'object' && 'response' in err
-          ? ((err as { response: { data: { message: string } } }).response?.data
-              ?.message ?? 'Erro ao criar conta')
-          : 'Erro ao criar conta';
-      setError(msg);
+      setError(getApiErrorMessage(err) || 'Erro ao criar conta');
     }
   };
 

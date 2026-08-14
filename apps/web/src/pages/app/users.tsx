@@ -7,6 +7,7 @@ import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent } from '../../components/ui/card';
 import { Dialog } from '../../components/ui/dialog';
+import { ErrorBanner } from '../../components/ui/error-banner';
 import { Input } from '../../components/ui/input';
 import { Select } from '../../components/ui/select';
 import { Skeleton } from '../../components/ui/skeleton';
@@ -17,6 +18,7 @@ import {
   useUsers,
 } from '../../hooks/queries/use-auth-queries';
 import { api } from '../../lib/api';
+import { getApiErrorMessage } from '../../lib/api-error';
 import type { User } from '../../types/auth';
 
 const userSchema = z.object({
@@ -40,6 +42,7 @@ export default function Users() {
   const deleteUser = useDeleteUser();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [formError, setFormError] = useState('');
 
   const isAdmin = currentUser?.role === 'ADMIN';
 
@@ -53,31 +56,40 @@ export default function Users() {
   });
 
   const openCreate = () => {
+    setFormError('');
+    createUser.reset();
     setEditingUser(null);
     reset({ name: '', email: '', password: '', role: 'OPERATOR' });
     setDialogOpen(true);
   };
 
   const openEdit = (u: User) => {
+    setFormError('');
+    createUser.reset();
     setEditingUser(u);
     reset({ name: u.name, email: u.email, password: '', role: u.role });
     setDialogOpen(true);
   };
 
   const onSubmit = async (data: UserForm) => {
-    if (editingUser) {
-      const payload: Record<string, string> = {
-        name: data.name,
-        email: data.email,
-        role: data.role,
-      };
-      if (data.password) payload.password = data.password;
-      await api.patch(`/users/${editingUser.id}`, payload);
-      qc.invalidateQueries({ queryKey: ['users'] });
-    } else {
-      await createUser.mutateAsync(data as Required<typeof data>);
+    setFormError('');
+    try {
+      if (editingUser) {
+        const payload: Record<string, string> = {
+          name: data.name,
+          email: data.email,
+          role: data.role,
+        };
+        if (data.password) payload.password = data.password;
+        await api.patch(`/users/${editingUser.id}`, payload);
+        qc.invalidateQueries({ queryKey: ['users'] });
+      } else {
+        await createUser.mutateAsync(data as Required<typeof data>);
+      }
+      setDialogOpen(false);
+    } catch (err) {
+      setFormError(getApiErrorMessage(err));
     }
-    setDialogOpen(false);
   };
 
   const handleDelete = async (id: string) => {
@@ -108,6 +120,12 @@ export default function Users() {
 
   return (
     <div className="space-y-6 transition-theme">
+      {deleteUser.isError && (
+        <ErrorBanner
+          message={getApiErrorMessage(deleteUser.error)}
+          onDismiss={() => deleteUser.reset()}
+        />
+      )}
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
           Usuários
@@ -196,6 +214,16 @@ export default function Users() {
         title={editingUser ? 'Editar Usuário' : 'Novo Usuário'}
       >
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          {(formError ||
+            (createUser.isError && getApiErrorMessage(createUser.error))) && (
+            <ErrorBanner
+              message={formError || getApiErrorMessage(createUser.error)}
+              onDismiss={() => {
+                setFormError('');
+                createUser.reset();
+              }}
+            />
+          )}
           <Input
             id="name"
             label="Nome"

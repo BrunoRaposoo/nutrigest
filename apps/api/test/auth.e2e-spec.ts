@@ -5,6 +5,7 @@ import {
 import { Test, type TestingModule } from '@nestjs/testing';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { AppModule } from './../src/app.module';
+import { AllExceptionsFilter } from './../src/common/filters/all-exceptions.filter';
 
 describe('Auth (e2e)', () => {
   let app: NestFastifyApplication;
@@ -18,6 +19,7 @@ describe('Auth (e2e)', () => {
       new FastifyAdapter(),
     );
     app.useGlobalPipes(new ZodValidationPipe());
+    app.useGlobalFilters(new AllExceptionsFilter());
     await app.init();
     await app.getHttpAdapter().getInstance().ready();
   });
@@ -40,6 +42,23 @@ describe('Auth (e2e)', () => {
     expect(res.statusCode).toBe(201);
     const body = JSON.parse(res.body);
     expect(body).toHaveProperty('id');
+  });
+
+  it('/auth/register (POST) - ignores role escalation attempt', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/auth/register',
+      payload: {
+        name: 'Escalation Attempt',
+        email: `e2e-escalation-${Date.now()}@example.com`,
+        password: 'password123',
+        role: 'ADMIN',
+      },
+    });
+
+    expect(res.statusCode).toBe(201);
+    const body = JSON.parse(res.body);
+    expect(body.role).toBe('OPERATOR');
   });
 
   it('/auth/register (POST) - duplicate email', async () => {
@@ -182,6 +201,76 @@ describe('Auth (e2e)', () => {
       expect(body).toHaveProperty('message');
       expect(body).not.toHaveProperty('resetToken');
     });
+
+    it('should not expose resetToken when NODE_ENV is production', async () => {
+      const email = `e2e-forgot-prod-${Date.now()}@example.com`;
+
+      await app.inject({
+        method: 'POST',
+        url: '/auth/register',
+        payload: { name: 'Forgot Prod E2E', email, password: 'password123' },
+      });
+
+      const previousEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'production';
+      try {
+        const res = await app.inject({
+          method: 'POST',
+          url: '/auth/forgot-password',
+          payload: { email },
+        });
+
+        expect(res.statusCode).toBe(201);
+        const body = JSON.parse(res.body);
+        expect(body).toHaveProperty('message');
+        expect(body).not.toHaveProperty('resetToken');
+      } finally {
+        process.env.NODE_ENV = previousEnv;
+      }
+    });
+
+    it('should return 429 JSON when the per-route limit is exceeded', async () => {
+      const email = `e2e-forgot-throttled-${Date.now()}@example.com`;
+
+      await app.inject({
+        method: 'POST',
+        url: '/auth/register',
+        payload: {
+          name: 'Forgot Throttled E2E',
+          email,
+          password: 'password123',
+        },
+      });
+
+      const previousEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'production';
+      try {
+        const statusCodes: number[] = [];
+        let first429Body: Record<string, unknown> | null = null;
+        let retryAfter: string | undefined;
+
+        for (let i = 0; i < 8; i++) {
+          const res = await app.inject({
+            method: 'POST',
+            url: '/auth/forgot-password',
+            payload: { email },
+          });
+          statusCodes.push(res.statusCode);
+          if (res.statusCode === 429) {
+            first429Body = JSON.parse(res.body);
+            retryAfter = res.headers['retry-after'];
+            break;
+          }
+        }
+
+        expect(statusCodes).toContain(429);
+        expect(first429Body).not.toBeNull();
+        expect(first429Body?.statusCode).toBe(429);
+        expect(retryAfter).toBeDefined();
+      } finally {
+        process.env.NODE_ENV = previousEnv;
+      }
+    });
   });
 
   describe('/auth/reset-password (POST)', () => {
@@ -204,7 +293,7 @@ describe('Auth (e2e)', () => {
       const resetRes = await app.inject({
         method: 'POST',
         url: '/auth/reset-password',
-        payload: { token: resetToken, password: 'newpassword456' },
+        payload: { email, token: resetToken, password: 'newpassword456' },
       });
 
       expect(resetRes.statusCode).toBe(201);
@@ -224,10 +313,50 @@ describe('Auth (e2e)', () => {
       const res = await app.inject({
         method: 'POST',
         url: '/auth/reset-password',
-        payload: { token: 'invalid-token', password: 'newpassword456' },
+        payload: {
+          email: 'nobody@example.com',
+          token: 'invalid-token',
+          password: 'newpassword456',
+        },
       });
 
       expect(res.statusCode).toBe(400);
+    });
+
+    it('should reject a token bound to a different email', async () => {
+      const email = `e2e-reset-other-${Date.now()}@example.com`;
+
+      await app.inject({
+        method: 'POST',
+        url: '/auth/register',
+        payload: { name: 'Reset Other E2E', email, password: 'password123' },
+      });
+
+      const forgotRes = await app.inject({
+        method: 'POST',
+        url: '/auth/forgot-password',
+        payload: { email },
+      });
+      const { resetToken } = JSON.parse(forgotRes.body);
+
+      const resetRes = await app.inject({
+        method: 'POST',
+        url: '/auth/reset-password',
+        payload: {
+          email: 'someone-else@example.com',
+          token: resetToken,
+          password: 'newpassword456',
+        },
+      });
+
+      expect(resetRes.statusCode).toBe(400);
+
+      const loginRes = await app.inject({
+        method: 'POST',
+        url: '/auth/login',
+        payload: { email, password: 'password123' },
+      });
+      expect(loginRes.statusCode).toBe(201);
     });
   });
 
@@ -375,7 +504,10 @@ describe('Auth (e2e)', () => {
         method: 'PATCH',
         url: '/auth/me',
         headers: { authorization: `Bearer ${accessToken}` },
-        payload: { password: 'newpassword456' },
+        payload: {
+          password: 'newpassword456',
+          currentPassword: 'password123',
+        },
       });
 
       expect(res.statusCode).toBe(200);
@@ -395,6 +527,61 @@ describe('Auth (e2e)', () => {
       });
 
       expect(oldLoginRes.statusCode).toBe(401);
+    });
+
+    it('should reject password change without currentPassword', async () => {
+      const email = `e2e-me-pw-missing-${Date.now()}@example.com`;
+
+      await app.inject({
+        method: 'POST',
+        url: '/auth/register',
+        payload: { name: 'Me PW Missing', email, password: 'password123' },
+      });
+
+      const loginRes = await app.inject({
+        method: 'POST',
+        url: '/auth/login',
+        payload: { email, password: 'password123' },
+      });
+      const { accessToken } = JSON.parse(loginRes.body);
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: '/auth/me',
+        headers: { authorization: `Bearer ${accessToken}` },
+        payload: { password: 'newpassword456' },
+      });
+
+      expect(res.statusCode).toBe(400);
+    });
+
+    it('should reject password change with wrong currentPassword', async () => {
+      const email = `e2e-me-pw-wrong-${Date.now()}@example.com`;
+
+      await app.inject({
+        method: 'POST',
+        url: '/auth/register',
+        payload: { name: 'Me PW Wrong', email, password: 'password123' },
+      });
+
+      const loginRes = await app.inject({
+        method: 'POST',
+        url: '/auth/login',
+        payload: { email, password: 'password123' },
+      });
+      const { accessToken } = JSON.parse(loginRes.body);
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: '/auth/me',
+        headers: { authorization: `Bearer ${accessToken}` },
+        payload: {
+          password: 'newpassword456',
+          currentPassword: 'wrongpassword',
+        },
+      });
+
+      expect(res.statusCode).toBe(401);
     });
   });
 });

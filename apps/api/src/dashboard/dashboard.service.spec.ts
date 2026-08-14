@@ -56,6 +56,15 @@ describe('DashboardService', () => {
       expect(Array.isArray(result.recentMovements)).toBe(true);
     });
 
+    it('should not load all products just to count them', async () => {
+      const findAllSpy = jest.spyOn(productsService, 'findAll');
+      const result = await service.getSummary();
+
+      expect(findAllSpy).not.toHaveBeenCalled();
+      expect(typeof result.totalProducts).toBe('number');
+      findAllSpy.mockRestore();
+    });
+
     it('should only include products with quantity <= 5 in lowStockAlerts', async () => {
       const allProducts = await productsService.findAll();
       if (allProducts.length === 0) return;
@@ -124,6 +133,46 @@ describe('DashboardService', () => {
   });
 
   // -- CSV --
+
+  describe('toCsv (formula injection)', () => {
+    const toCsv = (data: Array<Record<string, unknown>>, columns: string[]) =>
+      (
+        service as unknown as {
+          toCsv: (d: Array<Record<string, unknown>>, c: string[]) => string;
+        }
+      ).toCsv(data, columns);
+
+    it('should prefix values starting with "=" with a single quote', () => {
+      const csv = toCsv([{ product: '=SUM(A1:A2)' }], ['product']);
+      expect(csv).toContain("'=SUM(A1:A2)");
+    });
+
+    it('should prefix values starting with "+" with a single quote', () => {
+      const csv = toCsv([{ product: "+cmd|'/C calc'!A0" }], ['product']);
+      expect(csv).toContain("'+cmd|'/C calc'!A0");
+    });
+
+    it('should prefix values starting with "-" with a single quote', () => {
+      const csv = toCsv([{ product: '-2+3+cmd' }], ['product']);
+      expect(csv).toContain("'-2+3+cmd");
+    });
+
+    it('should prefix values starting with "@" with a single quote', () => {
+      const csv = toCsv([{ product: '@SUM(A1:A10)' }], ['product']);
+      expect(csv).toContain("'@SUM(A1:A10)");
+    });
+
+    it('should leave safe values unchanged', () => {
+      const csv = toCsv([{ product: 'Coca-Cola' }], ['product']);
+      expect(csv).toContain('Coca-Cola');
+      expect(csv).not.toContain("'Coca-Cola");
+    });
+
+    it('should still quote values containing commas or quotes', () => {
+      const csv = toCsv([{ product: 'a,b' }], ['product']);
+      expect(csv).toContain('"a,b"');
+    });
+  });
 
   describe('getConsumptionByRoomCsv', () => {
     it('should return a CSV string with header row', async () => {

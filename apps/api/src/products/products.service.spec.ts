@@ -2,6 +2,8 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { CentralStockService } from '../central-stock/central-stock.service';
 import { DbService } from '../db/db.service';
+import { stockMovements } from '../db/schema/stock-movements';
+import { users } from '../db/schema/users';
 import { LocalStorageService } from '../storage/local-storage.service';
 import { STORAGE_SERVICE } from '../storage/storage.service';
 import { ProductsService } from './products.service';
@@ -154,6 +156,34 @@ describe('ProductsService', () => {
 
       // Reset stock so cleanup works
       await centralStockService.update(created.id, { quantity: 0 });
+    });
+
+    it('should throw BadRequestException when product has stock movements', async () => {
+      const created = await service.create({
+        name: 'Movements Block Test',
+        category: 'BEVERAGE',
+      });
+
+      const [user] = await db.db
+        .insert(users)
+        .values({
+          name: 'Mov User',
+          email: `mov-product-${Date.now()}@example.com`,
+          passwordHash: 'hash',
+          role: 'OPERATOR',
+        })
+        .returning({ id: users.id });
+
+      await db.db.insert(stockMovements).values({
+        type: 'IN',
+        productId: created.id,
+        quantity: 10,
+        userId: user.id,
+      });
+
+      await expect(service.remove(created.id)).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 

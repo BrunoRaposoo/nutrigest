@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -6,7 +7,7 @@ import {
 import * as bcrypt from 'bcrypt';
 import { eq } from 'drizzle-orm';
 import { DbService } from '../db/db.service';
-import { users } from '../db/schema';
+import { stockMovements, users } from '../db/schema';
 import type { CreateUserData } from './dto/create-user.dto';
 import type { UpdateUserData } from './dto/update-user.dto';
 
@@ -132,7 +133,13 @@ export class UsersService {
     return user;
   }
 
-  async remove(id: string) {
+  async remove(id: string, currentUserId: string) {
+    if (id === currentUserId) {
+      throw new BadRequestException(
+        'Você não pode excluir seu próprio usuário',
+      );
+    }
+
     const [user] = await this.db.db
       .select()
       .from(users)
@@ -141,6 +148,18 @@ export class UsersService {
 
     if (!user) {
       throw new NotFoundException('User not found');
+    }
+
+    const [movement] = await this.db.db
+      .select({ id: stockMovements.id })
+      .from(stockMovements)
+      .where(eq(stockMovements.userId, id))
+      .limit(1);
+
+    if (movement) {
+      throw new BadRequestException(
+        'Não é possível excluir este usuário: existem movimentações de estoque registradas',
+      );
     }
 
     await this.db.db.delete(users).where(eq(users.id, id));

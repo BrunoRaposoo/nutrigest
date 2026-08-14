@@ -3,8 +3,8 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { and, desc, eq, gte, lte } from 'drizzle-orm';
-import { CentralStockService } from '../central-stock/central-stock.service';
+import { VALID_ROOMS } from '@nutrigest/shared';
+import { and, desc, eq, gte, lte, sql } from 'drizzle-orm';
 import { DbService } from '../db/db.service';
 import { centralStock } from '../db/schema/central-stock';
 import { products } from '../db/schema/products';
@@ -15,14 +15,9 @@ import type { CreateMealOutMovementData } from './dto/create-meal-out-movement.d
 import type { CreateReplenishMovementData } from './dto/create-replenish-movement.dto';
 import type { ListMovementsData } from './dto/list-movements.dto';
 
-const VALID_ROOMS = Array.from({ length: 10 }, (_, i) => 101 + i);
-
 @Injectable()
 export class StockMovementsService {
-  constructor(
-    private db: DbService,
-    private centralStockService: CentralStockService,
-  ) {}
+  constructor(private db: DbService) {}
 
   async createIn(dto: CreateInMovementData, userId: string) {
     for (const item of dto.items) {
@@ -64,16 +59,10 @@ export class StockMovementsService {
       throw new NotFoundException('Room not found');
     }
 
+    const productNames = new Map<string, string>();
     for (const item of dto.items) {
-      await this.ensureProductExists(item.productId);
-      if (item.restockedQuantity > 0) {
-        const qty = await this.centralStockService.getQuantity(item.productId);
-        if (qty < item.restockedQuantity) {
-          throw new BadRequestException(
-            `Insufficient stock for product ${item.productId}: available ${qty}, required ${item.restockedQuantity}`,
-          );
-        }
-      }
+      const product = await this.ensureProductExists(item.productId);
+      productNames.set(item.productId, product.name);
     }
 
     const created = await this.db.db.transaction(async (tx) => {
@@ -95,6 +84,13 @@ export class StockMovementsService {
         }
 
         if (item.restockedQuantity > 0) {
+          await this.decrementCentralStock(
+            tx,
+            item.productId,
+            item.restockedQuantity,
+            productNames.get(item.productId) ?? 'produto',
+          );
+
           const [replenish] = await tx
             .insert(stockMovements)
             .values({
@@ -105,12 +101,6 @@ export class StockMovementsService {
               userId,
             })
             .returning();
-
-          await this.upsertCentralStock(
-            tx,
-            item.productId,
-            -item.restockedQuantity,
-          );
 
           records.push(replenish);
         }
@@ -123,16 +113,16 @@ export class StockMovementsService {
   }
 
   async createMealOut(dto: CreateMealOutMovementData, userId: string) {
-    await this.ensureProductExists(dto.productId);
-
-    const qty = await this.centralStockService.getQuantity(dto.productId);
-    if (qty < dto.quantity) {
-      throw new BadRequestException(
-        `Insufficient stock: available ${qty}, required ${dto.quantity}`,
-      );
-    }
+    const product = await this.ensureProductExists(dto.productId);
 
     const [movement] = await this.db.db.transaction(async (tx) => {
+      await this.decrementCentralStock(
+        tx,
+        dto.productId,
+        dto.quantity,
+        product.name,
+      );
+
       const [m] = await tx
         .insert(stockMovements)
         .values({
@@ -143,8 +133,6 @@ export class StockMovementsService {
           description: dto.description,
         })
         .returning();
-
-      await this.upsertCentralStock(tx, dto.productId, -dto.quantity);
 
       return [m];
     });
@@ -210,24 +198,58 @@ export class StockMovementsService {
     if (!product) {
       throw new NotFoundException('Product not found');
     }
+
+    return product;
+  }
+
+  private async decrementCentralStock(
+    // biome-ignore lint/suspicious/noExplicitAny: Drizzle transaction type
+    tx: any,
+    productId: string,
+    amount: number,
+    productName: string,
+  ) {
+    const [updated] = await tx
+      .update(centralStock)
+      .set({
+        quantity: sql`${centralStock.quantity} - ${amount}`,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(centralStock.productId, productId),
+          gte(centralStock.quantity, amount),
+        ),
+      )
+      .returning({ quantity: centralStock.quantity });
+
+    if (!updated) {
+      const [current] = await tx
+        .select({ quantity: centralStock.quantity })
+        .from(centralStock)
+        .where(eq(centralStock.productId, productId))
+        .limit(1);
+
+      throw new BadRequestException(
+        `Estoque insuficiente para ${productName}: disponível ${current?.quantity ?? 0}, necessário ${amount}`,
+      );
+    }
   }
 
   // biome-ignore lint/suspicious/noExplicitAny: Drizzle transaction type
   private async upsertCentralStock(tx: any, productId: string, delta: number) {
-    const [current] = await tx
-      .select({ quantity: centralStock.quantity })
-      .from(centralStock)
-      .where(eq(centralStock.productId, productId))
-      .limit(1);
-
-    const newQuantity = (current?.quantity ?? 0) + delta;
-
+    // GREATEST: Postgres reavalia CHECK (quantity >= 0) na linha proposta ANTES de
+    // resolver o conflito; com delta negativo o insert especulativo falharia. O
+    // decremento real é aplicado atomicamente no DO UPDATE (quantity + delta).
     await tx
       .insert(centralStock)
-      .values({ productId, quantity: newQuantity })
+      .values({ productId, quantity: sql`GREATEST(${delta}, 0)` })
       .onConflictDoUpdate({
         target: centralStock.productId,
-        set: { quantity: newQuantity, updatedAt: new Date() },
+        set: {
+          quantity: sql`${centralStock.quantity} + ${delta}`,
+          updatedAt: new Date(),
+        },
       });
   }
 }

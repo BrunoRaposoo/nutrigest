@@ -1,8 +1,12 @@
+import { randomUUID } from 'node:crypto';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
+import { eq } from 'drizzle-orm';
 import { CentralStockService } from '../central-stock/central-stock.service';
 import { DbService } from '../db/db.service';
+import { centralStock as centralStockTable } from '../db/schema/central-stock';
 import { products } from '../db/schema/products';
+import { stockMovements } from '../db/schema/stock-movements';
 import { users } from '../db/schema/users';
 import { StockMovementsService } from './stock-movements.service';
 
@@ -37,6 +41,27 @@ describe('StockMovementsService', () => {
   async function getAnyUserId() {
     const [user] = await db.db.select({ id: users.id }).from(users).limit(1);
     return user?.id;
+  }
+
+  async function createIsolatedProduct() {
+    const [product] = await db.db
+      .insert(products)
+      .values({
+        name: `zzz_concurrency_${randomUUID()}`,
+        category: 'MEAL',
+      })
+      .returning({ id: products.id });
+    return product.id;
+  }
+
+  async function deleteIsolatedProduct(productId: string) {
+    await db.db
+      .delete(stockMovements)
+      .where(eq(stockMovements.productId, productId));
+    await db.db
+      .delete(centralStockTable)
+      .where(eq(centralStockTable.productId, productId));
+    await db.db.delete(products).where(eq(products.id, productId));
   }
 
   describe('createIn', () => {
@@ -98,6 +123,30 @@ describe('StockMovementsService', () => {
         ),
       ).rejects.toThrow(NotFoundException);
     });
+
+    it('should not lose updates under concurrent IN movements', async () => {
+      const productId = await createIsolatedProduct();
+      const userId = await getAnyUserId();
+      if (!productId || !userId) return;
+
+      try {
+        const before = await centralStock.getQuantity(productId);
+        const results = await Promise.allSettled(
+          Array.from({ length: 20 }, () =>
+            service.createIn({ items: [{ productId, quantity: 1 }] }, userId),
+          ),
+        );
+        const succeeded = results.filter(
+          (r) => r.status === 'fulfilled',
+        ).length;
+        const after = await centralStock.getQuantity(productId);
+
+        expect(succeeded).toBe(20);
+        expect(after).toBe(before + 20);
+      } finally {
+        await deleteIsolatedProduct(productId);
+      }
+    });
   });
 
   describe('createReplenish', () => {
@@ -139,23 +188,73 @@ describe('StockMovementsService', () => {
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('should throw BadRequestException if insufficient stock', async () => {
-      const productId = await getAnyProductId();
+    it('should throw BadRequestException with product name if insufficient stock', async () => {
+      const [product] = await db.db
+        .select({ id: products.id, name: products.name })
+        .from(products)
+        .limit(1);
       const userId = await getAnyUserId();
-      if (!productId || !userId) return;
+      if (!product || !userId) return;
 
       // Set stock to very low
-      await centralStock.update(productId, { quantity: 2 });
+      await centralStock.update(product.id, { quantity: 2 });
 
       await expect(
         service.createReplenish(
           101,
           {
-            items: [{ productId, consumedQuantity: 0, restockedQuantity: 10 }],
+            items: [
+              {
+                productId: product.id,
+                consumedQuantity: 0,
+                restockedQuantity: 10,
+              },
+            ],
           },
           userId,
         ),
-      ).rejects.toThrow(BadRequestException);
+      ).rejects.toMatchObject({
+        response: {
+          message: expect.stringContaining(product.name) as string,
+        },
+      });
+    });
+
+    it('should not expose product id in insufficient stock message', async () => {
+      const [product] = await db.db
+        .select({ id: products.id, name: products.name })
+        .from(products)
+        .limit(1);
+      const userId = await getAnyUserId();
+      if (!product || !userId) return;
+
+      await centralStock.update(product.id, { quantity: 2 });
+
+      const error = await service
+        .createReplenish(
+          101,
+          {
+            items: [
+              {
+                productId: product.id,
+                consumedQuantity: 0,
+                restockedQuantity: 10,
+              },
+            ],
+          },
+          userId,
+        )
+        .catch((e: Error) => e);
+
+      expect(error).toBeInstanceOf(BadRequestException);
+      const response = (error as BadRequestException).getResponse();
+      const message =
+        typeof response === 'string'
+          ? response
+          : (response as { message: string }).message;
+      expect(message).not.toContain(product.id);
+      expect(message).not.toContain('Insufficient');
+      expect(message).toContain('Estoque insuficiente');
     });
 
     it('should create only CONSUMPTION when restockedQuantity is 0', async () => {
@@ -193,6 +292,87 @@ describe('StockMovementsService', () => {
       expect(result[0].type).toBe('REPLENISH');
       expect(result[0].quantity).toBe(4);
     });
+
+    it('should roll back all movements when any item has insufficient stock', async () => {
+      const all = await db.db
+        .select({ id: products.id })
+        .from(products)
+        .limit(2);
+      const userId = await getAnyUserId();
+      if (all.length < 2 || !userId) return;
+
+      await centralStock.update(all[0].id, { quantity: 100 });
+      await centralStock.update(all[1].id, { quantity: 1 });
+
+      const before = await db.db
+        .select({ id: stockMovements.id })
+        .from(stockMovements)
+        .where(eq(stockMovements.room, 105));
+
+      await expect(
+        service.createReplenish(
+          105,
+          {
+            items: [
+              {
+                productId: all[0].id,
+                consumedQuantity: 5,
+                restockedQuantity: 5,
+              },
+              {
+                productId: all[1].id,
+                consumedQuantity: 0,
+                restockedQuantity: 10,
+              },
+            ],
+          },
+          userId,
+        ),
+      ).rejects.toThrow(BadRequestException);
+
+      const after = await db.db
+        .select({ id: stockMovements.id })
+        .from(stockMovements)
+        .where(eq(stockMovements.room, 105));
+
+      expect(after.length).toBe(before.length);
+      expect(await centralStock.getQuantity(all[0].id)).toBe(100);
+    });
+
+    it('should never oversell stock under concurrent replenishes', async () => {
+      const productId = await createIsolatedProduct();
+      const userId = await getAnyUserId();
+      if (!productId || !userId) return;
+
+      try {
+        const initial = 10;
+        await centralStock.update(productId, { quantity: initial });
+
+        const results = await Promise.allSettled(
+          Array.from({ length: 20 }, () =>
+            service.createReplenish(
+              101,
+              {
+                items: [
+                  { productId, consumedQuantity: 0, restockedQuantity: 1 },
+                ],
+              },
+              userId,
+            ),
+          ),
+        );
+        const succeeded = results.filter(
+          (r) => r.status === 'fulfilled',
+        ).length;
+        const finalQty = await centralStock.getQuantity(productId);
+
+        expect(succeeded).toBeLessThanOrEqual(initial);
+        expect(finalQty).toBeGreaterThanOrEqual(0);
+        expect(finalQty).toBe(initial - succeeded);
+      } finally {
+        await deleteIsolatedProduct(productId);
+      }
+    });
   });
 
   describe('createMealOut', () => {
@@ -229,6 +409,35 @@ describe('StockMovementsService', () => {
       ).rejects.toThrow(BadRequestException);
     });
 
+    it('should use Portuguese message with product name if insufficient stock', async () => {
+      const [product] = await db.db
+        .select({ id: products.id, name: products.name })
+        .from(products)
+        .limit(1);
+      const userId = await getAnyUserId();
+      if (!product || !userId) return;
+
+      await centralStock.update(product.id, { quantity: 1 });
+
+      const error = await service
+        .createMealOut(
+          { productId: product.id, quantity: 5, description: 'test' },
+          userId,
+        )
+        .catch((e: Error) => e);
+
+      expect(error).toBeInstanceOf(BadRequestException);
+      const response = (error as BadRequestException).getResponse();
+      const message =
+        typeof response === 'string'
+          ? response
+          : (response as { message: string }).message;
+      expect(message).toContain(product.name);
+      expect(message).not.toContain(product.id);
+      expect(message).not.toContain('Insufficient');
+      expect(message).toContain('Estoque insuficiente');
+    });
+
     it('should throw NotFoundException for non-existent product', async () => {
       const userId = await getAnyUserId();
       if (!userId) return;
@@ -243,6 +452,64 @@ describe('StockMovementsService', () => {
           userId,
         ),
       ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should never oversell stock under concurrent meal outs', async () => {
+      const productId = await createIsolatedProduct();
+      const userId = await getAnyUserId();
+      if (!productId || !userId) return;
+
+      try {
+        const initial = 10;
+        await centralStock.update(productId, { quantity: initial });
+
+        const results = await Promise.allSettled(
+          Array.from({ length: 20 }, () =>
+            service.createMealOut(
+              { productId, quantity: 1, description: 'teste' },
+              userId,
+            ),
+          ),
+        );
+        const succeeded = results.filter(
+          (r) => r.status === 'fulfilled',
+        ).length;
+        const finalQty = await centralStock.getQuantity(productId);
+
+        expect(succeeded).toBeLessThanOrEqual(initial);
+        expect(finalQty).toBeGreaterThanOrEqual(0);
+        expect(finalQty).toBe(initial - succeeded);
+      } finally {
+        await deleteIsolatedProduct(productId);
+      }
+    });
+
+    it('should roll back the MEAL_OUT movement when the transaction fails due to insufficient stock', async () => {
+      const productId = await getAnyProductId();
+      const userId = await getAnyUserId();
+      if (!productId || !userId) return;
+
+      await centralStock.update(productId, { quantity: 3 });
+
+      const before = await db.db
+        .select({ id: stockMovements.id })
+        .from(stockMovements)
+        .where(eq(stockMovements.type, 'MEAL_OUT'));
+
+      await expect(
+        service.createMealOut(
+          { productId, quantity: 5, description: 'teste' },
+          userId,
+        ),
+      ).rejects.toThrow(BadRequestException);
+
+      const after = await db.db
+        .select({ id: stockMovements.id })
+        .from(stockMovements)
+        .where(eq(stockMovements.type, 'MEAL_OUT'));
+
+      expect(await centralStock.getQuantity(productId)).toBe(3);
+      expect(after.length).toBe(before.length);
     });
   });
 

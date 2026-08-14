@@ -5,6 +5,7 @@ import {
 import { Test, type TestingModule } from '@nestjs/testing';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { AppModule } from './../src/app.module';
+import { registerAndLogin } from './helpers/auth.helper';
 
 describe('StockMovements (e2e)', () => {
   let app: NestFastifyApplication;
@@ -25,26 +26,6 @@ describe('StockMovements (e2e)', () => {
   afterAll(async () => {
     await app.close();
   });
-
-  async function registerAndLogin(
-    role: 'ADMIN' | 'TECHNICIAN' | 'OPERATOR' = 'OPERATOR',
-  ) {
-    const email = `e2e-sm-${role}-${Date.now()}-${Math.random()}@example.com`;
-
-    await app.inject({
-      method: 'POST',
-      url: '/auth/register',
-      payload: { name: `${role} User`, email, password: 'password123', role },
-    });
-
-    const loginRes = await app.inject({
-      method: 'POST',
-      url: '/auth/login',
-      payload: { email, password: 'password123' },
-    });
-
-    return JSON.parse(loginRes.body);
-  }
 
   async function createProduct(accessToken: string) {
     const res = await app.inject({
@@ -67,7 +48,7 @@ describe('StockMovements (e2e)', () => {
     });
 
     it('should return empty array when no movements', async () => {
-      const { accessToken } = await registerAndLogin('ADMIN');
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
 
       const res = await app.inject({
         method: 'GET',
@@ -82,7 +63,7 @@ describe('StockMovements (e2e)', () => {
 
   describe('POST /stock-movements/in', () => {
     it('should create IN movements and return 201', async () => {
-      const { accessToken } = await registerAndLogin('ADMIN');
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
       const product = await createProduct(accessToken);
 
       const res = await app.inject({
@@ -104,7 +85,7 @@ describe('StockMovements (e2e)', () => {
     });
 
     it('should create batch IN movements', async () => {
-      const { accessToken } = await registerAndLogin('ADMIN');
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
       const p1 = await createProduct(accessToken);
       const p2 = await createProduct(accessToken);
 
@@ -125,8 +106,8 @@ describe('StockMovements (e2e)', () => {
     });
 
     it('should reject OPERATOR', async () => {
-      const { accessToken } = await registerAndLogin('OPERATOR');
-      const admin = await registerAndLogin('ADMIN');
+      const { accessToken } = await registerAndLogin(app, 'OPERATOR');
+      const admin = await registerAndLogin(app, 'ADMIN');
       const product = await createProduct(admin.accessToken);
 
       const res = await app.inject({
@@ -142,7 +123,7 @@ describe('StockMovements (e2e)', () => {
     });
 
     it('should return 404 for non-existent product', async () => {
-      const { accessToken } = await registerAndLogin('ADMIN');
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
 
       const res = await app.inject({
         method: 'POST',
@@ -162,7 +143,7 @@ describe('StockMovements (e2e)', () => {
     });
 
     it('should reject empty items array', async () => {
-      const { accessToken } = await registerAndLogin('ADMIN');
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
 
       const res = await app.inject({
         method: 'POST',
@@ -177,7 +158,7 @@ describe('StockMovements (e2e)', () => {
 
   describe('POST /stock-movements/replenish/:room', () => {
     it('should create REPLENISH movements and return 201', async () => {
-      const { accessToken } = await registerAndLogin('ADMIN');
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
       const product = await createProduct(accessToken);
 
       // Ensure enough stock
@@ -216,8 +197,8 @@ describe('StockMovements (e2e)', () => {
     });
 
     it('should allow OPERATOR', async () => {
-      const admin = await registerAndLogin('ADMIN');
-      const operator = await registerAndLogin('OPERATOR');
+      const admin = await registerAndLogin(app, 'ADMIN');
+      const operator = await registerAndLogin(app, 'OPERATOR');
       const product = await createProduct(admin.accessToken);
 
       await app.inject({
@@ -246,7 +227,7 @@ describe('StockMovements (e2e)', () => {
     });
 
     it('should return 400 if insufficient stock', async () => {
-      const { accessToken } = await registerAndLogin('ADMIN');
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
       const product = await createProduct(accessToken);
 
       // Set stock to very low
@@ -275,8 +256,54 @@ describe('StockMovements (e2e)', () => {
       expect(res.statusCode).toBe(400);
     });
 
+    it('should return 400 when replenishing beyond available stock', async () => {
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
+      const product = await createProduct(accessToken);
+
+      await app.inject({
+        method: 'PATCH',
+        url: `/central-stock/${product.id}`,
+        headers: { authorization: `Bearer ${accessToken}` },
+        payload: { quantity: 3 },
+      });
+
+      for (let i = 0; i < 3; i++) {
+        const res = await app.inject({
+          method: 'POST',
+          url: '/stock-movements/replenish/101',
+          headers: { authorization: `Bearer ${accessToken}` },
+          payload: {
+            items: [
+              {
+                productId: product.id,
+                consumedQuantity: 0,
+                restockedQuantity: 1,
+              },
+            ],
+          },
+        });
+        expect(res.statusCode).toBe(201);
+      }
+
+      const res = await app.inject({
+        method: 'POST',
+        url: '/stock-movements/replenish/101',
+        headers: { authorization: `Bearer ${accessToken}` },
+        payload: {
+          items: [
+            {
+              productId: product.id,
+              consumedQuantity: 0,
+              restockedQuantity: 1,
+            },
+          ],
+        },
+      });
+      expect(res.statusCode).toBe(400);
+    });
+
     it('should return 404 for invalid room', async () => {
-      const { accessToken } = await registerAndLogin('ADMIN');
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
       const product = await createProduct(accessToken);
 
       const res = await app.inject({
@@ -300,7 +327,7 @@ describe('StockMovements (e2e)', () => {
 
   describe('POST /stock-movements/meal-out', () => {
     it('should create MEAL_OUT movement and return 201', async () => {
-      const { accessToken } = await registerAndLogin('ADMIN');
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
       const product = await createProduct(accessToken);
 
       // Ensure enough stock
@@ -329,8 +356,8 @@ describe('StockMovements (e2e)', () => {
     });
 
     it('should allow OPERATOR', async () => {
-      const admin = await registerAndLogin('ADMIN');
-      const operator = await registerAndLogin('OPERATOR');
+      const admin = await registerAndLogin(app, 'ADMIN');
+      const operator = await registerAndLogin(app, 'OPERATOR');
       const product = await createProduct(admin.accessToken);
 
       await app.inject({
@@ -355,7 +382,7 @@ describe('StockMovements (e2e)', () => {
     });
 
     it('should return 400 if insufficient stock', async () => {
-      const { accessToken } = await registerAndLogin('ADMIN');
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
       const product = await createProduct(accessToken);
 
       const res = await app.inject({
@@ -373,7 +400,7 @@ describe('StockMovements (e2e)', () => {
     });
 
     it('should return 404 for non-existent product', async () => {
-      const { accessToken } = await registerAndLogin('ADMIN');
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
 
       const res = await app.inject({
         method: 'POST',
@@ -392,7 +419,7 @@ describe('StockMovements (e2e)', () => {
 
   describe('GET /stock-movements after creating data', () => {
     it('should return movements with filters', async () => {
-      const { accessToken } = await registerAndLogin('ADMIN');
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
       const product = await createProduct(accessToken);
 
       // Create some movements
@@ -421,7 +448,7 @@ describe('StockMovements (e2e)', () => {
     });
 
     it('should paginate results', async () => {
-      const { accessToken } = await registerAndLogin('ADMIN');
+      const { accessToken } = await registerAndLogin(app, 'ADMIN');
 
       const res = await app.inject({
         method: 'GET',

@@ -7,6 +7,7 @@ import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent } from '../../components/ui/card';
 import { Dialog } from '../../components/ui/dialog';
+import { ErrorBanner } from '../../components/ui/error-banner';
 import { Input } from '../../components/ui/input';
 import { Select } from '../../components/ui/select';
 import { Skeleton } from '../../components/ui/skeleton';
@@ -17,6 +18,7 @@ import {
   useProducts,
 } from '../../hooks/queries/use-product-queries';
 import { api } from '../../lib/api';
+import { getApiErrorMessage } from '../../lib/api-error';
 import type { Product } from '../../types/product';
 
 const productSchema = z.object({
@@ -36,6 +38,7 @@ export default function Products() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [search, setSearch] = useState('');
+  const [formError, setFormError] = useState('');
 
   const {
     register,
@@ -49,12 +52,16 @@ export default function Products() {
   const canEdit = user?.role === 'ADMIN' || user?.role === 'TECHNICIAN';
 
   const openCreate = () => {
+    setFormError('');
+    createProduct.reset();
     setEditingProduct(null);
     reset({ name: '', category: 'BEVERAGE', unit: '' });
     setDialogOpen(true);
   };
 
   const openEdit = (product: Product) => {
+    setFormError('');
+    createProduct.reset();
     setEditingProduct(product);
     reset({
       name: product.name,
@@ -65,13 +72,18 @@ export default function Products() {
   };
 
   const onSubmit = async (data: ProductForm) => {
-    if (editingProduct) {
-      await api.patch(`/products/${editingProduct.id}`, data);
-      qc.invalidateQueries({ queryKey: ['products'] });
-    } else {
-      await createProduct.mutateAsync(data);
+    setFormError('');
+    try {
+      if (editingProduct) {
+        await api.patch(`/products/${editingProduct.id}`, data);
+        qc.invalidateQueries({ queryKey: ['products'] });
+      } else {
+        await createProduct.mutateAsync(data);
+      }
+      setDialogOpen(false);
+    } catch (err) {
+      setFormError(getApiErrorMessage(err));
     }
-    setDialogOpen(false);
   };
 
   const handleDelete = async (id: string) => {
@@ -86,6 +98,12 @@ export default function Products() {
 
   return (
     <div className="space-y-6 transition-theme">
+      {deleteProduct.isError && (
+        <ErrorBanner
+          message={getApiErrorMessage(deleteProduct.error)}
+          onDismiss={() => deleteProduct.reset()}
+        />
+      )}
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
           Produtos
@@ -181,6 +199,17 @@ export default function Products() {
         title={editingProduct ? 'Editar Produto' : 'Novo Produto'}
       >
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          {(formError ||
+            (createProduct.isError &&
+              getApiErrorMessage(createProduct.error))) && (
+            <ErrorBanner
+              message={formError || getApiErrorMessage(createProduct.error)}
+              onDismiss={() => {
+                setFormError('');
+                createProduct.reset();
+              }}
+            />
+          )}
           <Input
             id="name"
             label="Nome"

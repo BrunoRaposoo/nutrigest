@@ -15,6 +15,19 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const reply = ctx.getResponse();
 
+    if (
+      exception instanceof Error &&
+      'code' in exception &&
+      (exception as { code: string }).code === '23503'
+    ) {
+      this.logger.warn(`FK violation: ${exception.message}`);
+      return reply.status(HttpStatus.CONFLICT).send({
+        statusCode: HttpStatus.CONFLICT,
+        message: 'Registro possui dependências vinculadas',
+        error: 'Conflict',
+      });
+    }
+
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
       const response = exception.getResponse();
@@ -23,6 +36,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
         `HttpException [${status}]: ${JSON.stringify(response)}`,
       );
 
+      if (typeof response === 'string') {
+        return reply.status(status).send({
+          statusCode: status,
+          message: response,
+          error: HttpStatus[status] ?? 'Error',
+        });
+      }
       return reply.status(status).send(response);
     }
 

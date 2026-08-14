@@ -11,6 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from '../../components/ui/card';
+import { ErrorBanner } from '../../components/ui/error-banner';
 import { Input } from '../../components/ui/input';
 import { Skeleton } from '../../components/ui/skeleton';
 import { useMinibarStandard } from '../../hooks/queries/use-minibar-queries';
@@ -21,6 +22,7 @@ import {
   useMovements,
 } from '../../hooks/queries/use-movement-queries';
 import { useProducts } from '../../hooks/queries/use-product-queries';
+import { getApiErrorMessage } from '../../lib/api-error';
 import { cn, formatDate } from '../../lib/utils';
 
 type Tab = 'list' | 'in' | 'rooms' | 'meals';
@@ -35,6 +37,11 @@ const tabs: Array<{ key: Tab; label: string }> = [
 export default function StockMovements() {
   const [tab, setTab] = useState<Tab>('rooms');
   const { data: movements, isLoading } = useMovements();
+  const { data: recentMeals, isLoading: isRecentMealsLoading } = useMovements({
+    type: 'MEAL_OUT',
+    page: 1,
+    limit: 5,
+  });
   const { data: products = [] } = useProducts();
 
   // IN tab state
@@ -161,10 +168,6 @@ export default function StockMovements() {
     if (filterRoom && mov.room !== Number(filterRoom)) return false;
     return true;
   });
-
-  const recentMeals = movements
-    ?.filter((m) => m.type === 'MEAL_OUT')
-    .slice(0, 5);
 
   return (
     <div className="space-y-6 transition-theme">
@@ -317,6 +320,12 @@ export default function StockMovements() {
             <CardTitle>Entrada de Mercadorias</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {createIn.isError && (
+              <ErrorBanner
+                message={getApiErrorMessage(createIn.error)}
+                onDismiss={() => createIn.reset()}
+              />
+            )}
             {inItems.map((item) => (
               <div
                 key={item.id}
@@ -394,6 +403,13 @@ export default function StockMovements() {
           </CardHeader>
           <CardContent className="space-y-6">
             <RoomSelect value={selectedRoom} onChange={handleRoomChange} />
+
+            {createReplenish.isError && (
+              <ErrorBanner
+                message={getApiErrorMessage(createReplenish.error)}
+                onDismiss={() => createReplenish.reset()}
+              />
+            )}
 
             {selectedRoom ? (
               roomProducts.length > 0 ? (
@@ -480,6 +496,12 @@ export default function StockMovements() {
             <CardTitle>Retirada de Marmitas</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {createMealOut.isError && (
+              <ErrorBanner
+                message={getApiErrorMessage(createMealOut.error)}
+                onDismiss={() => createMealOut.reset()}
+              />
+            )}
             <div>
               <div className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
                 Produto
@@ -521,7 +543,19 @@ export default function StockMovements() {
               Registrar Retirada
             </Button>
 
-            {recentMeals && recentMeals.length > 0 && (
+            {isRecentMealsLoading ? (
+              <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                  Últimas retiradas
+                </h3>
+                <div className="space-y-2">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    /* biome-ignore lint/suspicious/noArrayIndexKey: skeleton loading placeholder */
+                    <Skeleton key={i} className="h-10 w-full rounded-lg" />
+                  ))}
+                </div>
+              </div>
+            ) : recentMeals && recentMeals.length > 0 ? (
               <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
                 <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                   Últimas retiradas
@@ -552,7 +586,7 @@ export default function StockMovements() {
                   ))}
                 </div>
               </div>
-            )}
+            ) : null}
           </CardContent>
         </Card>
       )}
