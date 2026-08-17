@@ -74,6 +74,9 @@
       "json",
       "ts"
     ],
+    "moduleNameMapper": {
+      "^@nutrigest/shared$": "<rootDir>/../../../packages/shared/src/index.ts"
+    },
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {

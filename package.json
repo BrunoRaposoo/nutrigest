@@ -2,10 +2,11 @@
   "name": "nutrigest",
   "private": true,
   "scripts": {
-    "dev:api": "pnpm --filter @nutrigest/api dev",
-    "dev:web": "pnpm --filter @nutrigest/web dev",
-    "build:api": "pnpm --filter @nutrigest/api build",
-    "build:web": "pnpm --filter @nutrigest/web build",
+    "build:shared": "pnpm --filter @nutrigest/shared build",
+    "dev:api": "pnpm --filter @nutrigest/shared build && pnpm --filter @nutrigest/api dev",
+    "dev:web": "pnpm --filter @nutrigest/shared build && pnpm --filter @nutrigest/web dev",
+    "build:api": "pnpm --filter @nutrigest/shared build && pnpm --filter @nutrigest/api build",
+    "build:web": "pnpm --filter @nutrigest/shared build && pnpm --filter @nutrigest/web build",
     "lint": "biome check",
     "format": "biome check --write",
     "lint:ci": "biome ci"
