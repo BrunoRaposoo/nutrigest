@@ -13,7 +13,6 @@ import { passwordResetTokens, refreshTokens, users } from '../db/schema';
 import type { ForgotPasswordData } from './dto/forgot-password.dto';
 import type { LoginData } from './dto/login.dto';
 import type { RefreshData } from './dto/refresh.dto';
-import type { RegisterData } from './dto/register.dto';
 import type { ResetPasswordData } from './dto/reset-password.dto';
 import type { UpdateProfileData } from './dto/update-profile.dto';
 
@@ -27,38 +26,6 @@ export class AuthService {
     private db: DbService,
     private jwtService: JwtService,
   ) {}
-
-  async register(dto: RegisterData) {
-    const existing = await this.db.db
-      .select()
-      .from(users)
-      .where(eq(users.email, dto.email))
-      .limit(1);
-
-    if (existing.length > 0) {
-      throw new ConflictException('Email already registered');
-    }
-
-    const passwordHash = await bcrypt.hash(dto.password, 10);
-
-    const [user] = await this.db.db
-      .insert(users)
-      .values({
-        name: dto.name,
-        email: dto.email,
-        passwordHash,
-        role: 'OPERATOR',
-      })
-      .returning({
-        id: users.id,
-        name: users.name,
-        email: users.email,
-        role: users.role,
-        createdAt: users.createdAt,
-      });
-
-    return user;
-  }
 
   async login(dto: LoginData) {
     const [user] = await this.db.db
