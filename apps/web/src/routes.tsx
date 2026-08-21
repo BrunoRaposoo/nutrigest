@@ -12,7 +12,6 @@ import StockMovements from './pages/app/stock-movements';
 import Users from './pages/app/users';
 import ForgotPassword from './pages/auth/forgot-password';
 import Login from './pages/auth/login';
-import Register from './pages/auth/register';
 import ResetPassword from './pages/auth/reset-password';
 import Landing from './pages/landing';
 import NotFound from './pages/not-found';
@@ -27,7 +26,6 @@ export const router = createBrowserRouter([
     element: <AuthLayout />,
     children: [
       { path: '/login', element: <Login /> },
-      { path: '/register', element: <Register /> },
       { path: '/recuperar-senha', element: <ForgotPassword /> },
       { path: '/redefinir-senha', element: <ResetPassword /> },
     ],
