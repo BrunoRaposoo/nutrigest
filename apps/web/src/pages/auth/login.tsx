@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import { Button } from '../../components/ui/button';
 import {
@@ -25,9 +25,7 @@ type LoginForm = z.infer<typeof loginSchema>;
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
   const [error, setError] = useState('');
-  const registered = location.state?.registered;
 
   const {
     register,
@@ -57,11 +55,6 @@ export default function Login() {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {registered && (
-            <div className="rounded-lg bg-green-50 dark:bg-green-900/20 p-3 text-sm text-green-600 dark:text-green-400">
-              Conta criada com sucesso! Faça login.
-            </div>
-          )}
           {error && (
             <div className="rounded-lg bg-red-50 dark:bg-red-900/20 p-3 text-sm text-red-600 dark:text-red-400">
               {error}
@@ -94,15 +87,6 @@ export default function Login() {
             Entrar
           </Button>
         </form>
-        <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-4">
-          Não tem conta?{' '}
-          <Link
-            to="/register"
-            className="text-navy-700 dark:text-gold-500 hover:underline font-medium"
-          >
-            Cadastre-se
-          </Link>
-        </p>
       </CardContent>
     </Card>
   );
