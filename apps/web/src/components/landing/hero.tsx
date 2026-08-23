@@ -27,14 +27,6 @@ export function Hero() {
               Entrar
             </Button>
           </Link>
-          <Link to="/register">
-            <Button
-              size="sm"
-              className="bg-gold-500 text-navy-900 hover:bg-gold-400"
-            >
-              Começar
-            </Button>
-          </Link>
         </div>
       </nav>
 
@@ -64,14 +56,6 @@ export function Hero() {
           transition={{ duration: 0.8, delay: 0.4 }}
           className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4"
         >
-          <Link to="/register">
-            <Button
-              size="lg"
-              className="bg-gold-500 text-navy-900 hover:bg-gold-400 text-lg px-8"
-            >
-              Começar Grátis
-            </Button>
-          </Link>
           <Link to="/login">
             <Button
               variant="outline"
