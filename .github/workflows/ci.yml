@@ -65,7 +65,7 @@ jobs:
           POSTGRES_USER: nutrigest
           POSTGRES_PASSWORD: nutrigest
         ports:
-          - 5434:5432
+          - 5436:5432
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -84,11 +84,11 @@ jobs:
       - name: Setup test DB
         run: pnpm --filter @nutrigest/api exec drizzle-kit migrate
         env:
-          DATABASE_URL: postgresql://nutrigest:nutrigest@localhost:5434/nutrigest_test
+          DATABASE_URL: postgresql://nutrigest:nutrigest@localhost:5436/nutrigest_test
           JWT_SECRET: test-secret-for-ci-32-chars-minimum-xyz1234567890
       - run: pnpm --filter @nutrigest/api exec jest --testPathIgnorePatterns=auth.service.spec.ts --passWithNoTests
         env:
-          DATABASE_URL: postgresql://nutrigest:nutrigest@localhost:5434/nutrigest_test
+          DATABASE_URL: postgresql://nutrigest:nutrigest@localhost:5436/nutrigest_test
           JWT_SECRET: test-secret-for-ci-32-chars-minimum-xyz1234567890
 
   test-web:
