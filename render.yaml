@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: nutrigest-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /api
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false # set in Render dashboard: Neon pooled URL with ?sslmode=require
+      - key: JWT_SECRET
+        sync: false # generate: openssl rand -base64 48
+      - key: CORS_ORIGIN
+        value: https://nutritheone.com.br,https://www.nutritheone.com.br,https://nutrigest.vercel.app
+      - key: UPLOAD_DIR
+        value: uploads
+      - key: MAX_FILE_SIZE
+        value: 5242880

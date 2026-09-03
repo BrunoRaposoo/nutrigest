@@ -32,12 +32,13 @@ FROM base AS runner
 WORKDIR /app
 RUN apk add --no-cache curl
 COPY --from=build /app/deploy ./
+COPY apps/api/docker-entrypoint.sh ./docker-entrypoint.sh
+RUN chmod +x ./docker-entrypoint.sh
 
 ENV NODE_ENV=production
-ENV PORT=3000
 EXPOSE 3000
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=15s \
-  CMD curl -f http://localhost:3000/api-json || exit 1
+  CMD curl -f http://localhost:${PORT:-3000}/api || exit 1
 
-CMD ["node", "dist/src/main"]
+CMD ["sh", "./docker-entrypoint.sh"]
