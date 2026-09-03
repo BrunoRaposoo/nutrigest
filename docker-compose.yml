@@ -7,7 +7,7 @@ services:
       POSTGRES_USER: nutrigest
       POSTGRES_PASSWORD: nutrigest
     ports:
-      - '5434:5432'
+      - '5436:5432'
     volumes:
       - pgdata:/var/lib/postgresql/data
 

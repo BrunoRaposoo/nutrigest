@@ -26,6 +26,12 @@ export class DbService implements OnModuleInit {
 
     this.pool = new Pool({
       connectionString: databaseUrl,
+      ssl:
+        process.env.NODE_ENV === 'production'
+          ? { rejectUnauthorized: false }
+          : false,
+      idleTimeoutMillis: 10_000,
+      allowExitOnIdle: true,
     });
 
     this.pool.on('error', (err) => {

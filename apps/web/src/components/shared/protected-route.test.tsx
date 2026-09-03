@@ -31,7 +31,6 @@ beforeEach(() => {
     user: null,
     isAuthenticated: false,
     login: vi.fn(),
-    register: vi.fn(),
     logout: vi.fn(),
     isLoading: false,
   });
@@ -43,7 +42,6 @@ describe('ProtectedRoute', () => {
       user: { id: '1', name: 'Ana', email: 'ana@test.com', role: 'ADMIN' },
       isAuthenticated: true,
       login: vi.fn(),
-      register: vi.fn(),
       logout: vi.fn(),
       isLoading: false,
     });
@@ -66,7 +64,6 @@ describe('ProtectedRoute', () => {
       user: null,
       isAuthenticated: false,
       login: vi.fn(),
-      register: vi.fn(),
       logout: vi.fn(),
       isLoading: true,
     });
